@@ -1,0 +1,138 @@
+.TH fixext 1 "fixext" "2019-08-29" "fixext v0.1"
+
+
+.SH NAME
+.IX Header "NAME"
+fixext\~-\~replace file extensions to match actual content
+
+
+.SH SYNOPSIS
+.IX Header "SYNOPSIS"
+fixext [\fIOPTION\fR...] \fIFILE\fR...
+
+
+.SH DESCRIPTION
+.IX Header "DESCRIPTION"
+.IR fixext (1)
+reads each \fIFILE\fR with
+.IR libmagic (3),
+obtaining a human-readable description and a MIME type.
+It then matches these strings against a set of extensions, mainly sourced via
+\(lqmime.types\(rq from Apache.  If the current file extension of
+\fIFILE\fR does not match an appropriate extension,
+.IR fixext (1)
+corrects it by renaming the file.
+
+
+.SH OPTIONS
+.IX Header "OPTIONS"
+.TP
+-n
+Dry run: do not actually rename any files.
+
+.TP
+-i
+Interactive: prompt before renaming files.
+
+.TP
+-f
+Force: in non-interactive mode, overwrite destination files if they already
+exist (the default is to skip).
+
+.TP
+-r
+Recursive: descend into directories specified on the command line instead of
+skipping them.
+
+.TP
+-A
+Append detected extension instead of replacing the current one.
+
+.TP
+-F
+Only print matching descriptions/MIME types (like \(lqfile --mime-type\(rq, but
+if the description matches, it will output that).  For example (... indicates
+omitted text):
+.PP
+.nf
+.RS
+$ fixext -F manpage.1 library.dll weirdfile
+manpage.1: text/troff
+library.dll: PE32 executable (DLL)...
+weirdfile: (unknown)
+.RE
+.fi
+.PP
+
+.TP
+-D
+Dump built-in known extensions. For example (\(lq\fB\\t\fR\(rq indicates a tab
+character, ... indicates omitted text):
+.PP
+.nf
+.RS
+.ec ,
+$ fixext -D
+PE\S* executable \(DLL\),fB\t,fRdll
+__END__
+image/jpeg jpg jpeg
+image/gif gif
+...
+.ec
+.RE
+.fi
+.PP
+
+.TP
+-L \fBIDX\fR  (default: \fB-1\fR)
+Choose the dot that separates the file extension by its index (meaning,
+the \fBIDX\fR-th dot in the file basename).  Positive indices are 0-indexed;
+negative indices count from one element past the last dot; 0 means
+\(lqeverything to the right of the first dot\(rq, -1 means \(lqto the right of
+the last\(rq, -2 means \(lqto the right of the second to last\(rq, etc.
+.IP
+For example, with \(lq-L-2\(rq, if you have a file named \(lqarchive.tar.gz\(rq,
+.IR fixext (1)
+will consider \(lqtar.gz\(rq as the extension and rename the file to
+\(lqarchive.gz\(rq.
+.IP
+If \fBIDX\fR is invalid for a specific file, that file will be skipped.
+.IP
+The default is -1, the last dot separates the extension.
+
+.TP
+-Z \fBDESC=EXTENSIONS\fR
+Override \fBEXTENSIONS\fR for all files that match \fBDESC\fR.
+\fBDESC\fR is a regular expression that matches a human-readable file
+description provided by libmagic.  To refer to literal \(lq=\(rq in the regex,
+use \(lq\\u003D\(rq).  \fBEXTENSIONS\fR is a space- or comma-separated list of
+extensions;  an existing extension will be regarded as correct if it matches
+any of these, and an incorrect extension will be corrected to the first.
+.IP
+Use \fBDESC=*\fR to skip all \fBDESC\fR-matching files.  Use \fBDESC=?\fR to
+ignore a \fBDESC\fR match and prefer MIME instead (e.g. when a built-in matching
+\fBDESC\fR is incorrect).
+
+.TP
+-X \fBMIME=EXTENSIONS\fR
+Override \fBEXTENSIONS\fR for all files of type \fBMIME\fR (\fBMIME\fR is a
+literal string).  See \(lq-Z\(rq (except \fBMIME=?\fR is not supported).
+
+.SH BUGS
+.IX Header "BUGS"
+.nr step 1 1
+.IP \n[step] 4
+\(lq-Z DESC=EXTENSIONS\(rq cannot accept the equal sign character in the
+\fBDESC\fR regex.  Should probably add a separate layer of escaping for this, or
+a different separator which is not a regex syntax character.
+.IP \n+[step]
+Should probably provide a way to match MIME types against a regex, both in
+built-in data and via \(lq-X\(rq.
+.IP \n+[step]
+Should extract a Rust library?
+
+
+.SH SEE ALSO
+.IX Header "SEE ALSO"
+.IR file (1),
+.IR libmagic (3)

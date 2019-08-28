@@ -1,0 +1,26 @@
+[package]
+name     = "fixext"
+version  = "0.1.0"
+authors  = ["inty <interruptinuse@gmail.com>"]
+edition  = "2018"
+build    = "build.rs"
+description = """
+Rename files so that their extensions match actual content
+"""
+
+[dependencies]
+magic      = "0.12"
+serde      = { version = "1.0", features = ["derive"] }
+serde_cbor = "0.10"
+glib       = "0.8"
+regex      = "1"
+ansi_term  = "0.12"
+clap       = "2"
+rustyline  = "5"
+shellwords = "1.0"
+
+[build-dependencies]
+serde      = { version = "1.0", features = ["derive"] }
+serde_cbor = "0.10"
+glob       = "0.3.0"
+regex      = "1"
