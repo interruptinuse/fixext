@@ -6,7 +6,6 @@ const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 const AUTHORS: Option<&'static str> = option_env!("CARGO_PKG_AUTHORS");
 const DESCRIP: Option<&'static str> = option_env!("CARGO_PKG_DESCRIPTION");
 
-
 // TODO: build.rs, mime.types.txt, cargo env variable (see above consts)
 const MIME_TYPES_CBOR: &[u8] = include_bytes!("mime.types.cbor");
 const DESC_TYPES_CBOR: &[u8] = include_bytes!("desc.types.cbor");
@@ -21,7 +20,6 @@ use std::path::PathBuf;
 use std::vec::Vec;
 use std::clone::Clone;
 use std::collections::HashMap;
-
 
 extern crate magic;
 use magic::CookieFlags;
@@ -51,11 +49,36 @@ use rustyline::Editor;
 
 extern crate shellwords;
 
-//extern crate fixext;
-use fixext::Cookie;
-use fixext::MagicMatch;
-use fixext::Opts;
-use fixext::Types;
+
+struct Cookie {
+  desc: magic::Cookie,
+  mime: magic::Cookie,
+}
+
+#[derive(Debug)]
+enum MagicMatch {
+  Description(Regex, Vec<String>),
+  MIME(String, Vec<String>),
+  None
+}
+
+#[derive(Debug, Default)]
+struct Opts {
+  dry:         bool,
+  interactive: bool,
+  force:       bool,
+  recursive:   bool,
+  append:      bool,
+  detect:      bool,
+  dump:        bool,
+  extdot:      i32,
+  verbose:     bool,
+}
+
+struct Types {
+  desc: Vec<(Regex, Vec<String>)>,
+  mime: HashMap<String, Vec<String>>,
+}
 
 
 
@@ -112,27 +135,64 @@ fn vec_si<T>(v: &[T], i: i32) -> Option<&[T]> {
 }
 
 
-fn match_file(
-    fpath:  &str,
-    cookie: &Cookie,
-    descs:  &[(Regex,Vec<String>)],
-    mimes:  &HashMap<String,Vec<String>>
-) -> (String, String, MagicMatch) {
+// DFS order directory tree traversal
+fn visit_tree<OkT>(
+  t:  &PathBuf,
+  fv: &dyn Fn(PathBuf) -> Result<OkT,String>,
+  dv: &dyn Fn(PathBuf) -> Result<OkT,String>,
+  ev: &dyn Fn(PathBuf, String))
+-> Vec<(PathBuf,Result<OkT,String>)>
+where OkT:      Clone,
+{
+  let mut results: Vec<(PathBuf,Result<OkT,String>)> = vec![];
 
-  let desc = cookie.desc.file(&fpath).unwrap();
-  let mime = cookie.mime.file(&fpath).unwrap();
+  match fs::metadata(&t) {
+    Ok(m)  => {
+      if m.is_dir() {
+        let dir_result = (dv)(t.clone());
 
-  for (r, exts) in descs {
-    if r.is_match(&*desc) {
-      return (desc.clone(), mime.clone(), MagicMatch::Description(r.clone(), exts.clone()));
+        results.push((t.clone(), dir_result.clone()));
+
+        match fs::read_dir(t) {
+          Err(e) => {
+            let estr = e.to_string();
+            (ev)(t.clone(), estr.clone());
+            results.push((t.clone(), Err(estr.clone())));
+            return results;
+          },
+
+          Ok(rd) => {
+            for entry in rd {
+              match entry {
+                Err(e) => {
+                  let estr = e.to_string();
+                  (ev)(t.clone(), estr.clone());
+                  results.push((t.clone(), Err(estr.clone())));
+                },
+
+                Ok(de) => {
+                  results.extend(visit_tree(&de.path(), fv, dv, ev));
+                }
+              }
+            }
+          }
+        }
+      }
+      else {
+        results.push((t.clone(), (fv)(t.clone())));
+        return results;
+      };
+    },
+
+    Err(e) => {
+      let estr = e.to_string();
+      (ev)(t.clone(), estr.clone());
+      results.push((t.clone(), Err(estr.clone())));
+      return results;
     }
-  }
+  };
 
-  if let Some(exts) = mimes.get(&mime) {
-    return (desc.clone(), mime.clone(), MagicMatch::MIME(mime, exts.clone()));
-  }
-
-  return (desc.clone(), mime.clone(), MagicMatch::None);
+  return results;
 }
 
 
@@ -316,146 +376,127 @@ fn main() {
   }
 
 
-  fn process_file(
-      fp:     &PathBuf,
-      opts:   &Opts,
-      cookie: &Cookie,
-      types:  &Types) {
-    // XXX: rest_path must be relative, or it will overwrite prefix_path
-    // XXX: however, it works with dirname/basename
-    let full_path_str = fp.as_os_str().to_string_lossy().into_owned();
+  let file_visitor: &dyn Fn(PathBuf) -> Result<(),String> = &|path| {
+    let path_str = path.as_os_str().to_string_lossy().into_owned();
 
-    let md = match fs::metadata(&fp) {
-      Ok(m)  => m,
-      Err(e) => {
-        message!("{} {}",
-                 bold(&*format!("ERROR: Cannot read file metadata ({}):", e)),
-                 full_path_str);
-        return;
-      }
-    };
-
-    //verbose!(opts, "full_path_str: {}", full_path_str);
-
-    if !fp.exists() {
-      message!("{} {}", bold("ERROR: File does not exist, skipping:"), full_path_str);
-      return;
+    if !path.exists() {
+      message!("{} {}", bold("ERROR: File does not exist, skipping:"), path_str);
+      return Err("file does not exist".to_string());
     }
 
-    if md.is_dir() {
-      if !opts.recursive {
-        message!("{} {}", bold("File is a directory, skipping:"), full_path_str);
-        return;
-      }
 
-      match std::fs::read_dir(&fp) {
-        Ok(rd) => {
-          for entry in rd {
-            match entry {
-              Ok(d)  => {
-                // TODO: replace file_name() with path() and get rid of prefix
-                process_file(&d.path(), opts, cookie, types);
-              }
-              Err(e) => {
-                message!("{} {}",
-                         bold(&*format!("ERROR: Invalid entry in directory ({}):", e)),
-                         full_path_str);
-              }
-            }
+    let (desc, mime, magic): (String, String, MagicMatch) = {
+      let desc = c.desc.file(&path).unwrap();
+      let mime = c.mime.file(&path).unwrap();
+
+      let mut result: MagicMatch = MagicMatch::None;
+
+      for (r, exts) in &types.desc {
+        if r.is_match(&*desc) {
+          if *exts == vec![String::from("?")] {
+            verbose!(
+              o, "{} {}",
+              bold(&*format!("File description \"{}\" matches /{}/, extensions {:?}, is ignored:",
+                            desc, r, exts)),
+              path_str);
+            break;
           }
-        },
-        Err(e) => {
-          message!("{} {}",
-                   bold(&*format!("ERROR: fs::read_dir error ({}), skipping:", e)),
-                   full_path_str);
-          return;
+
+          result = MagicMatch::Description(r.clone(), exts.clone());
         }
       }
 
-      return;
+      if let (Some(exts), MagicMatch::None) = (types.mime.get(&mime), &result) {
+        result = MagicMatch::MIME(mime.clone(), exts.clone());
+      }
+
+      (desc.clone(), mime.clone(), result)
     };
 
-    let (desc, mime, magic) = match_file(&full_path_str, &cookie, &types.desc, &types.mime);
-
-    //// XXX: remove
-    //verbose!(opts, "file={} desc={} mime={} match={:?}", full_path_str, desc, mime, magic);
 
     let (exts, matched_desc) = match magic {
       MagicMatch::Description(r, exts) => {
-        verbose!(opts, "{} {}",
-                 bold(&*format!("File description \"{}\" matches /{}/, extensions {:?}:",
-                                desc, r, exts)), full_path_str);
+        verbose!(o, "{} {}",
+                    bold(&*format!("File description \"{}\" matches /{}/, extensions {:?}:",
+                                   desc, r, exts)),
+                    path_str);
         (exts, desc.clone())
       },
       MagicMatch::MIME(m, exts) => {
-        verbose!(opts, "{} {}",
-                 bold(&*format!("File MIME \"{}\" matches, extensions {:?}:",
-                                m, exts)), full_path_str);
+        verbose!(o, "{} {}",
+                    bold(&*format!("File MIME \"{}\" matches, extensions {:?}:",
+                                   m, exts)),
+                    path_str);
         (exts, mime.clone())
       },
       MagicMatch::None => {
-        verbose!(opts, "{} {}",
-                 bold(&*format!("Unknown file type (description: \"{}\", MIME: {})",
-                                desc, mime)), full_path_str);
+        verbose!(o, "{} {}",
+                    bold(&*format!("Unknown file type (description: \"{}\", MIME: {})",
+                                   desc, mime)),
+                    path_str);
         (vec![], String::from("(unknown)"))
       }
     };
 
-    if opts.detect {
-      println!("{}: {}", full_path_str, matched_desc);
-      return;
+
+    if o.detect {
+      println!("{}: {}", path_str, matched_desc);
+      return Ok(());
     }
 
+
     // TODO: bikeshed dirname/basename
-    let (dirname, basename) = path_to_dir_base(&fp);
+    let (dirname, basename) = path_to_dir_base(&path);
     let dotsplits: Vec<String> = basename.clone().split('.').map(|s| s.to_string()).collect();
 
     let has_ext = basename.contains('.');
 
-    let (extdot_matched, ext) = match vec_si(&dotsplits[1..], opts.extdot) {
+    let (extdot_matched, ext) = match vec_si(&dotsplits[1..], o.extdot) {
       Some(s) => (true, s.join(".")),
       None    => (false, String::from(""))
     };
 
-    //// XXX: remove
-    //verbose!(opts, "ext match: {:?}", (&extdot_matched, &ext));
-
     if (!extdot_matched) && has_ext {
       message!("{} {}",
-               bold(&*format!("ERROR: the -L{} index does not match an extension, skipping:", opts.extdot)), full_path_str);
-      return;
+               bold(
+                 &*format!("ERROR: the -L{} index is out of bounds for file, skipping:",
+                           o.extdot)),
+               path_str);
+      return Err(String::from("extdot index out of bounds"));;
     }
 
-    //// XXX: remove
-    //verbose!(opts, "{:?}", (&dirname, &basename));
-    //verbose!(opts, "dotsplits: {:?}", dotsplits);
-    //verbose!(opts, "ext: {:?}", ext);
 
     if exts == vec!["*"] {
-      verbose!(opts, "{} {}", bold("File ignored, skipping:"), full_path_str);
-      return;
+      verbose!(o, "{} {}",
+                     bold("File ignored, skipping:"),
+                     path_str);
+      return Ok(());
     }
 
     if exts.is_empty() {
-      verbose!(opts, "{} {}", bold("No extensions matched for file, skipping"), full_path_str);
-      return;
+      verbose!(o, "{} {}",
+                     bold("No extensions matched for file, skipping:"),
+                     path_str);
+      return Err(String::from("No matched extensions"));
     }
 
     if !ext.is_empty() && exts.contains(&ext) {
-      return;
+      verbose!(o, "{} {}",
+                     bold("File has a valid matched extension, skipping:"),
+                     path_str);
+      return Ok(());
     }
+
 
     let new_ext = String::from(&exts[0]);
 
     let new_basename: String =
-      if opts.append || !has_ext {
+      if o.append || !has_ext {
         basename.clone()
       }
       else {
         String::from(&basename.clone()[0..basename.len()-ext.len()-1])
       } + &*format!(".{}", new_ext);
-
-    //verbose!(opts, "new_basename: {}", new_basename);
 
     let new_fullname: PathBuf = {
       let mut new_fullname: PathBuf = PathBuf::from(&dirname);
@@ -463,18 +504,19 @@ fn main() {
       new_fullname
     };
 
-    //verbose!(opts, "new_fullname: {:?}", &new_fullname);
-
-    if new_fullname == *fp {
-      return;
+    if new_fullname == *path {
+      verbose!(o, "{} {}",
+                     bold("Suggested file name equals to old, skipping:"),
+                     path_str);
+      return Err(String::from("attempted rename to same path"));
     }
 
-    let destination_exists = new_fullname.exists();
-    let old_fullname_str_quoted = shellwords::escape(&full_path_str);
-    let new_fullname_str = new_fullname.as_os_str().to_string_lossy().into_owned();
+    let destination_exists      = new_fullname.exists();
+    let old_fullname_str_quoted = shellwords::escape(&path_str);
+    let new_fullname_str        = new_fullname.as_os_str().to_string_lossy().into_owned();
     let new_fullname_str_quoted = shellwords::escape(&new_fullname_str);
 
-    let do_rename: bool = if opts.interactive {
+    let do_rename: bool = if o.interactive {
       let mut rl = Editor::<()>::new();
 
       let prompt = format!(
@@ -508,14 +550,40 @@ fn main() {
     if do_rename {
       println!("{} -> {}", old_fullname_str_quoted, new_fullname_str_quoted);
 
-      if let Err(e) = fs::rename(fp, new_fullname) {
-        message!("{} {}", bold(&*format!("ERROR: fs::rename failed ({}):", e)), full_path_str);
+      if let Err(e) = fs::rename(path, new_fullname) {
+        message!("{} {}",
+                 bold(&*format!("ERROR: fs::rename failed ({}):", e)),
+                 path_str);
+        return Err(format!("fs::rename failed: {}", e));
       };
     }
+
+
+    return Ok(());
+  }; // file_visitor
+
+
+  let dir_visitor: &dyn Fn(PathBuf) -> Result<(),String> = &|path| {
+    let path_str = path.as_os_str().to_string_lossy().into_owned();
+
+    if !o.recursive {
+      message!("{} {}", bold("File is a directory, skipping:"), path_str);
+      return Err("not recursing".to_string());
+    }
+
+    return Ok(());
   };
 
 
-  files.for_each( |fp| {
-    process_file(&PathBuf::from(&fp), &o, &c, &types);
+  let error_visitor: &dyn Fn(PathBuf, String) = &|path, estr| {
+    message!("{} {:?}",
+             bold(&*format!("Failed to read file metadata ({})", estr)),
+             path);
+  };
+
+
+  files.for_each(|fp| {
+    visit_tree::<()>(&PathBuf::from(&fp),
+                     &file_visitor, &dir_visitor, &error_visitor);
   });
 }

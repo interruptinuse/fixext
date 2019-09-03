@@ -4,9 +4,14 @@ version  = "0.1.0"
 authors  = ["inty <interruptinuse@gmail.com>"]
 edition  = "2018"
 build    = "build.rs"
+autobins = false
 description = """
 Rename files so that their extensions match actual content
 """
+
+[[bin]]
+name = "fixext"
+path = "fixext.rs"
 
 [dependencies]
 magic      = "0.12"

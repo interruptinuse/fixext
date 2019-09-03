@@ -28,8 +28,8 @@ fn main() -> Result<(), Box<dyn Error>>  {
     println!("rerun-if-changed=data/{}", name);
   }
 
-  println!("rerun-if-changed=src/desc.types.cbor");
-  println!("rerun-if-changed=src/mime.types.cbor");
+  println!("rerun-if-changed=desc.types.cbor");
+  println!("rerun-if-changed=mime.types.cbor");
 
 
   let mut desc_types_set: HashSet<String> = HashSet::new();
@@ -81,7 +81,7 @@ fn main() -> Result<(), Box<dyn Error>>  {
     }
   }
 
-  let desc_types_cbor = fs::File::create("src/desc.types.cbor").unwrap();
+  let desc_types_cbor = fs::File::create("desc.types.cbor").unwrap();
   serde_cbor::to_writer(desc_types_cbor, &desc_types)?;
 
 
@@ -139,7 +139,7 @@ fn main() -> Result<(), Box<dyn Error>>  {
     }
   }
 
-  let mime_types_cbor = fs::File::create("src/mime.types.cbor").unwrap();
+  let mime_types_cbor = fs::File::create("mime.types.cbor").unwrap();
   serde_cbor::to_writer(mime_types_cbor, &mime_types)?;
 
 
