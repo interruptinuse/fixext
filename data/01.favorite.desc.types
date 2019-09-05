@@ -11,7 +11,7 @@
 #   test.pls: text/plain
 
 no read permission$	*
-PLS playlist.*	pls
+PLS playlist	pls
 Emacs/XEmacs v\w+ byte-compiled Lisp data	elc
 SQLite( \S+)? database \(Fossil repository\)	fossil
 PE\S* executable \(DLL\)	dll
