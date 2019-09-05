@@ -1,3 +1,5 @@
+# vim: noet:ts=8:sts=8
+#
 # This file matches non-MIME libmagic descriptions to file extensions;
 # It only includes those file types for which an associated MIME is
 # too generic.
