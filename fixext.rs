@@ -153,6 +153,10 @@ where OkT:      Clone,
 
         results.push((t.clone(), dir_result.clone()));
 
+        if dir_result.is_err() {
+          return results;
+        }
+
         match fs::read_dir(t) {
           Err(e) => {
             let estr = e.to_string();
