@@ -547,6 +547,13 @@ fn main() {
         _ => false
       }
     }
+    else if new_fullname.exists() && !o.force {
+      message!("{} {} -> {}",
+                bold("Renaming will overwrite an existing file and -f is not set, skipping:"),
+                old_fullname_str_quoted,
+                new_fullname_str_quoted);
+      false
+    }
     else {
       true
     };
