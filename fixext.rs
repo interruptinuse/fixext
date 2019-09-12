@@ -553,7 +553,7 @@ fn main() {
 
       if let Err(e) = fs::rename(path, new_fullname) {
         message_path!(path_str, "{}",
-                      bold(&*format!("ERROR: fs::rename failed ({}):", e)));
+                      bold_format!("ERROR: fs::rename failed ({}):", e));
         return Err(format!("fs::rename failed: {}", e));
       };
     }
@@ -579,7 +579,7 @@ fn main() {
     let path_str = path.as_os_str().to_string_lossy().into_owned();
 
     message_path!(path_str, "{}",
-                  bold(&*format!("Failed to read file metadata ({}):", estr)));
+                  bold_format!("Failed to read file metadata ({}):", estr));
   };
 
 
