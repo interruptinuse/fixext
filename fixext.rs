@@ -1,4 +1,5 @@
 #![allow(clippy::needless_return)]
+#![allow(clippy::cognitive_complexity)]
 
 
 const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
@@ -549,7 +550,14 @@ fn main() {
     };
 
     if do_rename {
-      println!("{} -> {}", old_fullname_str_quoted, new_fullname_str_quoted);
+      println!("{}{} -> {}",
+               if o.dry { "(DRY RUN) " } else { "" },
+               old_fullname_str_quoted,
+               new_fullname_str_quoted);
+
+      if o.dry {
+        return Ok(());
+      }
 
       if let Err(e) = fs::rename(path, new_fullname) {
         message_path!(path_str, "{}",
