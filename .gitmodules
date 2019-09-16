@@ -1,0 +1,6 @@
+[submodule "vendor/file"]
+	path = vendor/file
+	url = git@github.com:/file/file.git
+[submodule "vendor/mingw-libgnurx"]
+	path = vendor/mingw-libgnurx
+	url = git@github.com:/TimothyGu/libgnurx
