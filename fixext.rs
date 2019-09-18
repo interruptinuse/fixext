@@ -60,6 +60,7 @@ struct Opts {
   append:      bool,
   detect:      bool,
   dump:        bool,
+  nobuiltin:   bool,
   extdot:      i32,
   verbose:     bool,
 }
@@ -202,6 +203,7 @@ fn main() {
     (@arg append:      -A ... "Append the correct extension instead of replacing")
     (@arg detect:      -F ... "Only print detected types (like `file --mime-type`)")
     (@arg dump:        -D ... "Print known descriptions/MIME types and associated extensions")
+    (@arg nobuiltin:   -B ... "Do not use built-in extension associations")
     (@arg extdot:      -L [IDX] ...           number_of_values(1)
                           !empty_values +allow_hyphen_values
       { |optarg| match optarg.parse::<i32>() {
@@ -224,25 +226,57 @@ fn main() {
   let files = matches.values_of("FILE").unwrap_or_default();
 
 
-  let builtin_desc_types: Vec<(Regex, Vec<String>)> =
-    serde_cbor::from_slice::<Vec<(String,Vec<String>)>>(DESC_TYPES_CBOR)
-    .expect("Failed to initialize: invalid built-in desc.types CBOR")
-    .iter().map(|d| {
-      let (r, exts) = d;
-      let regex = Regex::new(&*r).expect(&*format!(
-        "Failed to initialize: invalid regex in description CBOR: {}", r));
-      return (regex, exts.clone());
-    }).collect();
+  let o: Opts = {
+    let mut o: Opts = Default::default();
+
+    macro_rules! get_flag {
+      ($var:ident) => (o.$var = matches.is_present(stringify!($var)););
+    }
+
+    get_flag!(dry);
+    get_flag!(interactive);
+    get_flag!(force);
+    get_flag!(recursive);
+    get_flag!(append);
+    get_flag!(detect);
+    get_flag!(dump);
+    get_flag!(nobuiltin);
+    get_flag!(verbose);
+
+    o.extdot = match matches.values_of("extdot") {
+      Some(v)  => v.last().unwrap().parse::<i32>().unwrap(),
+      None     => -1
+    };
+
+    o
+  };
 
 
-  let builtin_mime_types_vec: Vec<(String,Vec<String>)> =
-    serde_cbor::from_slice::<Vec<(String,Vec<String>)>>(MIME_TYPES_CBOR)
-    .expect("Failed to initialize: invalid built-in mime.types CBOR");
+  let (builtin_desc_types, builtin_mime_types_vec, builtin_mime_types) = if !o.nobuiltin {
+    let builtin_desc_types: Vec<(Regex, Vec<String>)> =
+      serde_cbor::from_slice::<Vec<(String,Vec<String>)>>(DESC_TYPES_CBOR)
+      .expect("Failed to initialize: invalid built-in desc.types CBOR")
+      .iter().map(|d| {
+        let (r, exts) = d;
+        let regex = Regex::new(&*r).expect(&*format!(
+          "Failed to initialize: invalid regex in description CBOR: {}", r));
+        return (regex, exts.clone());
+      }).collect();
 
-  let builtin_mime_types: HashMap<String,Vec<String>> = {
-    let mut mt = HashMap::new();
-    mt.extend(builtin_mime_types_vec.clone());
-    mt
+    let builtin_mime_types_vec: Vec<(String,Vec<String>)> =
+      serde_cbor::from_slice::<Vec<(String,Vec<String>)>>(MIME_TYPES_CBOR)
+      .expect("Failed to initialize: invalid built-in mime.types CBOR");
+
+    let builtin_mime_types: HashMap<String,Vec<String>> = {
+      let mut mt = HashMap::new();
+      mt.extend(builtin_mime_types_vec.clone());
+      mt
+    };
+
+    (builtin_desc_types, builtin_mime_types_vec, builtin_mime_types)
+  }
+  else {
+    (Vec::new(), Vec::new(), HashMap::new())
   };
 
 
@@ -258,29 +292,6 @@ fn main() {
   c.mime.load(&["/usr/share/misc/magic.mgc"])
     .expect("Failed to initialize: could not load mime.types magic");
 
-  let o: Opts = {
-    let mut o: Opts = Default::default();
-
-    macro_rules! get_flag {
-      ($var:ident) => (o.$var = matches.is_present(stringify!($var)););
-    }
-
-    get_flag!(dry);
-    get_flag!(interactive);
-    get_flag!(force);
-    get_flag!(recursive);
-    get_flag!(append);
-    get_flag!(detect);
-    get_flag!(dump);
-    get_flag!(verbose);
-
-    o.extdot = match matches.values_of("extdot") {
-      Some(v)  => v.last().unwrap().parse::<i32>().unwrap(),
-      None     => -1
-    };
-
-    o
-  };
 
   macro_rules! message {
     ($fmt:expr, $($arg:tt)*) => {
