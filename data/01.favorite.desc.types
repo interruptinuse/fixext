@@ -12,6 +12,7 @@
 
 no read permission$	*
 PLS playlist	pls
+M3U playlist	m3u
 Emacs/XEmacs v\w+ byte-compiled Lisp data	elc
 SQLite( \S+)? database \(Fossil repository\)	fossil
 PE\S* executable \(DLL\)	dll
