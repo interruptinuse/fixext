@@ -11,10 +11,10 @@
 #   test.pls: text/plain
 
 no read permission$	*
-PLS playlist	pls
-M3U playlist	m3u
-Emacs/XEmacs v\w+ byte-compiled Lisp data	elc
-SQLite( \S+)? database \(Fossil repository\)	fossil
 PE\S* executable \(DLL\)	dll
 python( \S+)? byte-compiled	pyc
+Emacs/XEmacs v\w+ byte-compiled Lisp data	elc
 Apple Desktop Services Store	DS_Store
+PLS playlist	pls
+M3U playlist	m3u
+SQLite( \S+)? database \(Fossil repository\)	fossil
