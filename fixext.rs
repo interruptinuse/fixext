@@ -222,7 +222,7 @@ fn main() {
     (@arg magicfile:   -M [MGC]
                           !empty_values +allow_hyphen_values
                               "Load magic definitions from MGC")
-    (@arg extdot:      -L [IDX] ...           number_of_values(1)
+    (@arg extdot:      -L [IDX]
                           !empty_values +allow_hyphen_values
       { |optarg| match optarg.parse::<i32>() {
           Ok(_)  => Ok(()),
@@ -261,8 +261,8 @@ fn main() {
     get_flag!(nobuiltin);
     get_flag!(verbose);
 
-    o.extdot = match matches.values_of("extdot") {
-      Some(v)  => v.last().unwrap().parse::<i32>().unwrap(),
+    o.extdot = match matches.value_of("extdot") {
+      Some(v)  => v.parse::<i32>().unwrap(),
       None     => -1
     };
 
