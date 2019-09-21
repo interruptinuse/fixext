@@ -18,3 +18,4 @@ Apple Desktop Services Store	DS_Store
 PLS playlist	pls
 M3U playlist	m3u
 SQLite( \S+)? database \(Fossil repository\)	fossil
+magic binary file	mgc
