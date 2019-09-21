@@ -10,6 +10,8 @@ const DESCRIP: Option<&'static str> = option_env!("CARGO_PKG_DESCRIPTION");
 const MIME_TYPES_CBOR: &[u8] = include_bytes!("mime.types.cbor");
 const DESC_TYPES_CBOR: &[u8] = include_bytes!("desc.types.cbor");
 
+const DEFAULT_MGC: &str = "/usr/share/misc/magic.mgc";
+
 
 use std::fs;
 use std::process;
@@ -60,6 +62,7 @@ struct Opts {
   detect:      bool,
   dump:        bool,
   nobuiltin:   bool,
+  magicfile:   String,
   extdot:      i32,
   verbose:     bool,
 }
@@ -216,6 +219,9 @@ fn main() {
     (@arg detect:      -F ... "Only print detected types (like `file --mime-type`)")
     (@arg dump:        -D ... "Print known descriptions/MIME types and associated extensions")
     (@arg nobuiltin:   -B ... "Do not use built-in extension associations")
+    (@arg magicfile:   -M [MGC]
+                          !empty_values +allow_hyphen_values
+                              "Load magic definitions from MGC")
     (@arg extdot:      -L [IDX] ...           number_of_values(1)
                           !empty_values +allow_hyphen_values
       { |optarg| match optarg.parse::<i32>() {
@@ -260,6 +266,11 @@ fn main() {
       None     => -1
     };
 
+    o.magicfile = match matches.value_of("magicfile") {
+      Some(v)  => String::from(v),
+      None     => String::from(DEFAULT_MGC)
+    };
+
     o
   };
 
@@ -299,10 +310,10 @@ fn main() {
             .expect("Failed to initialize: couldn't open a magic cookie with MAGIC_MIME_TYPE")
   };
 
-  c.desc.load(&["/usr/share/misc/magic.mgc"])
-    .expect("Failed to initialize: could not load desc.types magic");
-  c.mime.load(&["/usr/share/misc/magic.mgc"])
-    .expect("Failed to initialize: could not load mime.types magic");
+  c.desc.load(&[&o.magicfile])
+    .expect(&*format!("Failed to initialize: desc: could not load magic files: {:?}", &o.magicfile));
+  c.mime.load(&[&o.magicfile])
+    .expect(&*format!("Failed to initialize: mime: could not load magic files: {:?}", &o.magicfile));
 
 
   macro_rules! message {
