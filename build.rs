@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::io;
 use std::io::BufRead;
+use std::env;
 use std::fs;
 use std::path::Path;
 use std::vec::Vec;
@@ -141,6 +142,17 @@ fn main() -> Result<(), Box<dyn Error>>  {
 
   let mime_types_cbor = fs::File::create("mime.types.cbor").unwrap();
   serde_cbor::to_writer(mime_types_cbor, &mime_types)?;
+
+
+  let target = env::var("TARGET").unwrap();
+  let windows = target.contains("windows");
+
+  if windows {
+    println!("cargo:rustc-link-lib=shlwapi");
+    println!("cargo:rustc-link-search=native=.");
+    println!("cargo:rustc-link-lib=gnurx-0");
+    println!("cargo:rustc-link-lib=magic");
+  }
 
 
   return Ok(());

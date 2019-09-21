@@ -1,2 +1,10 @@
+/*.zip
+/fixext.exe
+/fixext-win*-*.*.*/
 /target
+/libgnurx-0.dll
+/libmagic.dll
+/libmagic-1.dll
+/pthreadGC2.dll
+/magic.mgc
 /*.cbor

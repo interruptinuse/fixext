@@ -10,13 +10,15 @@ const DESCRIP: Option<&'static str> = option_env!("CARGO_PKG_DESCRIPTION");
 const MIME_TYPES_CBOR: &[u8] = include_bytes!("mime.types.cbor");
 const DESC_TYPES_CBOR: &[u8] = include_bytes!("desc.types.cbor");
 
+#[cfg(not(windows))]
 const DEFAULT_MGC: &str = "/usr/share/misc/magic.mgc";
 
+#[cfg(windows)]
+const DEFAULT_MGC: &str = "magic.mgc";
 
 use std::fs;
 use std::process;
 use std::convert::TryInto;
-use std::str::FromStr;
 use std::path;
 use std::path::PathBuf;
 use std::path::Component::*;
@@ -268,7 +270,15 @@ fn main() {
 
     o.magicfile = match matches.value_of("magicfile") {
       Some(v)  => String::from(v),
-      None     => String::from(DEFAULT_MGC)
+      None     => if cfg!(not(windows)) {
+        String::from(DEFAULT_MGC)
+      }
+      else {
+        let mut pb = std::env::current_exe().expect("Could not get current executable path");
+        pb.pop();
+        pb.push(DEFAULT_MGC);
+        pb.as_os_str().to_string_lossy().to_string()
+      }
     };
 
     o
