@@ -17,14 +17,13 @@ use std::convert::TryInto;
 use std::str::FromStr;
 use std::path;
 use std::path::PathBuf;
+use std::path::Component::*;
 use std::vec::Vec;
 use std::clone::Clone;
 use std::collections::HashMap;
 
 use magic::CookieFlags;
 use magic::flags::MIME_TYPE;
-
-use glib::{path_get_dirname, path_get_basename};
 
 use regex::Regex;
 
@@ -78,27 +77,40 @@ fn bold(s: &str) -> ANSIString<> {
 
 
 fn path_to_dir_base(s: &path::Path) -> (String, String) {
-  macro_rules! __ {
-    ($($fn:ident),*) => {
-      ($(
-        {
-          let component: String;
+  let components = s.components().collect::<Vec<path::Component>>();
 
-          if let Some(pbuf) = $fn(s) {
-            if let Some(os_str) = pbuf.to_str() {
-              component = String::from_str(os_str).unwrap();
-            }
-            else { panic!("non-Unicode characters in string") };
-          }
-          else { panic!("glib::{} failed", stringify!($fn)) };
+  let dirname = {
+    if components.len() == 1 {
+      match components[0] {
+        CurDir                => components[0],
+        ParentDir | Normal(_) => path::Component::CurDir,
+        _                     => path::Component::RootDir,
+      }.as_os_str().to_string_lossy().to_string()
+    }
+    else {
+      let mut pb = PathBuf::new();
 
-          component
-        }
-      ),*)
-    };
-  }
+      for s in &components[0..components.len()-1] {
+        pb.push(s);
+      }
 
-  __!(path_get_dirname, path_get_basename)
+      String::from(pb.as_os_str().to_string_lossy())
+    }
+  };
+
+  let basename = {
+    if components.len() == 1 {
+      match components[0] {
+        CurDir | ParentDir | Normal(_) => components[0],
+        _                              => path::Component::RootDir,
+      }
+    }
+    else {
+      components[components.len()-1]
+    }
+  }.as_os_str().to_string_lossy().to_string();
+
+  (dirname, basename)
 }
 
 

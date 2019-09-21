@@ -17,7 +17,6 @@ path = "fixext.rs"
 magic      = "^0.12"
 serde      = { version = "^1.0", features = ["derive"] }
 serde_cbor = "^0.10"
-glib       = "^0.8"
 regex      = "1"
 ansi_term  = "^0.12"
 clap       = "2"
