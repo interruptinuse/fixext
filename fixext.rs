@@ -1,3 +1,5 @@
+#![feature(label_break_value)]
+
 #![allow(clippy::needless_return)]
 #![allow(clippy::cognitive_complexity)]
 
@@ -432,11 +434,15 @@ fn main() {
     }
 
 
-    let (desc, mime, magic): (String, String, MagicMatch) = {
-      let desc = c.desc.file(&path).unwrap();
-      let mime = c.mime.file(&path).unwrap();
+    let (desc, mime, magic): (String, String, MagicMatch) = 'magic: {
+      let desc = c.desc.file(&path).unwrap_or_default();
+      let mime = c.mime.file(&path).unwrap_or_default();
 
       let mut result: MagicMatch = MagicMatch::None;
+
+      if desc == mime && mime == String::default() {
+        break 'magic (desc, mime, result);
+      }
 
       for (r, exts) in &types.desc {
         if r.is_match(&*desc) {
