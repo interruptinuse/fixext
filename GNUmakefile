@@ -67,9 +67,13 @@ $(PTHREAD): vendor/pthreadGC2.dll
 	cp $^ $@
 
 
+fixext.1.html: fixext.1
+	env TZ=UTC groff -mandoc -Thtml <$< >$@
+
 .PHONY: clean
 clean:
 	rm -f fixext.exe
+	rm -f fixext.1.html
 	rm -rf $(WINDIST) $(WINDIST).zip
 	rm -f $(addprefix $(ROOT_DIR)/,magic.mgc $(DLLS) libmagic.dll)
 	git submodule foreach find . -delete
