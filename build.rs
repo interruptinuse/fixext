@@ -4,6 +4,7 @@ use std::io::BufRead;
 use std::env;
 use std::fs;
 use std::path::Path;
+use std::path::PathBuf;
 use std::vec::Vec;
 use std::collections::HashSet;
 
@@ -19,6 +20,10 @@ use regex::Regex;
 
 
 fn main() -> Result<(), Box<dyn Error>>  {
+  let out_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());
+  let desc_types_cbor_file = out_dir.join("desc.types.cbor");
+  let mime_types_cbor_file = out_dir.join("mime.types.cbor");
+
   println!("rerun-if-changed=data");
 
   let data_dir = Path::new("./data");
@@ -29,8 +34,8 @@ fn main() -> Result<(), Box<dyn Error>>  {
     println!("rerun-if-changed=data/{}", name);
   }
 
-  println!("rerun-if-changed=desc.types.cbor");
-  println!("rerun-if-changed=mime.types.cbor");
+  println!("rerun-if-changed={}", desc_types_cbor_file.to_string_lossy());
+  println!("rerun-if-changed={}", mime_types_cbor_file.to_string_lossy());
 
 
   let mut desc_types_set: HashSet<String> = HashSet::new();
@@ -82,7 +87,7 @@ fn main() -> Result<(), Box<dyn Error>>  {
     }
   }
 
-  let desc_types_cbor = fs::File::create("desc.types.cbor").unwrap();
+  let desc_types_cbor = fs::File::create(desc_types_cbor_file).unwrap();
   serde_cbor::to_writer(desc_types_cbor, &desc_types)?;
 
 
@@ -140,7 +145,7 @@ fn main() -> Result<(), Box<dyn Error>>  {
     }
   }
 
-  let mime_types_cbor = fs::File::create("mime.types.cbor").unwrap();
+  let mime_types_cbor = fs::File::create(mime_types_cbor_file).unwrap();
   serde_cbor::to_writer(mime_types_cbor, &mime_types)?;
 
 

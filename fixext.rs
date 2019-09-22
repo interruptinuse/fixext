@@ -7,8 +7,8 @@ const AUTHORS: Option<&'static str> = option_env!("CARGO_PKG_AUTHORS");
 const DESCRIP: Option<&'static str> = option_env!("CARGO_PKG_DESCRIPTION");
 
 // TODO: build.rs, mime.types.txt, cargo env variable (see above consts)
-const MIME_TYPES_CBOR: &[u8] = include_bytes!("mime.types.cbor");
-const DESC_TYPES_CBOR: &[u8] = include_bytes!("desc.types.cbor");
+const MIME_TYPES_CBOR: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/mime.types.cbor"));
+const DESC_TYPES_CBOR: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/desc.types.cbor"));
 
 #[cfg(not(windows))]
 const DEFAULT_MGC: &str = "/usr/share/misc/magic.mgc";
