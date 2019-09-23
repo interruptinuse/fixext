@@ -207,6 +207,16 @@ where OkT:      Clone,
 }
 
 
+fn quote_filename(filename: &str) -> String {
+  if cfg!(not(windows)) {
+    return shellwords::escape(filename);
+  }
+  else {
+    String::from(filename).replace(" ", r"\ ")
+  }
+}
+
+
 
 fn main() {
   let app = clap::clap_app!(fixext =>
@@ -557,9 +567,9 @@ fn main() {
     }
 
     let destination_exists      = new_fullname.exists();
-    let old_fullname_str_quoted = shellwords::escape(&path_str);
+    let old_fullname_str_quoted = quote_filename(&path_str);
     let new_fullname_str        = new_fullname.as_os_str().to_string_lossy().into_owned();
-    let new_fullname_str_quoted = shellwords::escape(&new_fullname_str);
+    let new_fullname_str_quoted = quote_filename(&new_fullname_str);
 
     let do_rename: bool = if o.interactive {
       let mut rl = Editor::<()>::new();
