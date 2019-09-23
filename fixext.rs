@@ -216,8 +216,11 @@ fn quote_filename(filename: &str) -> String {
   if cfg!(not(windows)) {
     return shellwords::escape(filename);
   }
+  else if filename.contains(' ') {
+    String::from("\"") + filename + "\""
+  }
   else {
-    String::from(filename).replace(" ", r"\ ")
+    filename.to_string()
   }
 }
 
