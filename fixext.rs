@@ -79,7 +79,12 @@ struct Types {
 
 
 fn bold(s: &str) -> ANSIString<> {
-  return Style::default().bold().paint(s);
+  if cfg!(not(windows)) {
+    return Style::default().bold().paint(s);
+  }
+  else {
+    return Style::default().paint(s);
+  }
 }
 
 
