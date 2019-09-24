@@ -583,7 +583,7 @@ fn main() {
       let mut rl = Editor::<()>::new();
 
       let prompt = format!(
-        "{}: {} '{}' {} '{}'{}{} ",
+        "{}: {} {} {} {}{}{} ",
         bold("fixext"),
         bold("rename"),
         old_fullname_str_quoted,
