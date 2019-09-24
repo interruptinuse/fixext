@@ -565,7 +565,7 @@ fn main() {
 
     let new_fullname: PathBuf = {
       let mut new_fullname: PathBuf = PathBuf::from(&dirname);
-      new_fullname.push(new_basename);
+      new_fullname.push(&new_basename);
       new_fullname
     };
 
@@ -577,6 +577,7 @@ fn main() {
     let destination_exists      = new_fullname.exists();
     let old_fullname_str_quoted = quote_filename(&path_str);
     let new_fullname_str        = new_fullname.as_os_str().to_string_lossy().into_owned();
+    let new_basename_str_quoted = quote_filename(&new_basename);
     let new_fullname_str_quoted = quote_filename(&new_fullname_str);
 
     let do_rename: bool = if o.interactive {
@@ -588,7 +589,7 @@ fn main() {
         bold("rename"),
         old_fullname_str_quoted,
         bold("to"),
-        new_fullname_str_quoted,
+        new_basename_str_quoted,
         if destination_exists {bold(" (DESTINATION EXISTS)")} else {ANSIString::from("")},
         bold("?"));
 
