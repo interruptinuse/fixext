@@ -238,9 +238,11 @@ fn main() {
     (@arg force:       -f ... "When non-interactive, overwrite existing destinations")
     (@arg recursive:   -r ... "Recurse into directory FILEs instead of ignoring")
     (@arg append:      -A ... "Append the correct extension instead of replacing")
-    (@arg detect:      -F ... "Only print detected types (like `file --mime-type`)")
-    (@arg dump:        -D ... "Print known descriptions/MIME types and associated extensions")
     (@arg nobuiltin:   -B ... "Do not use built-in extension associations")
+    (@arg detect:      -F ... group("action")
+                              "Only print detected types (like `file --mime-type`)")
+    (@arg dump:        -D ... group("action")
+                              "Print known descriptions/MIME types and associated extensions")
     (@arg magicfile:   -M [MGC]
                           !empty_values +allow_hyphen_values
                               "Load magic definitions from MGC")
@@ -278,9 +280,9 @@ fn main() {
     get_flag!(force);
     get_flag!(recursive);
     get_flag!(append);
+    get_flag!(nobuiltin);
     get_flag!(detect);
     get_flag!(dump);
-    get_flag!(nobuiltin);
     get_flag!(verbose);
 
     o.extdot = match matches.value_of("extdot") {
