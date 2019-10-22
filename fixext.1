@@ -88,6 +88,38 @@ image/gif gif
 .fi
 .PP
 
+.TP
+-I
+Output NUL-separated match information for each file.
+.nr step 1 1
+The output entries for each file path are:
+.br
+(1) File path, unescaped
+.br
+(2) libmagic human-readable description
+.br
+(3) space-separated extensions matching that description, or an empty string
+.br
+(4) libmagic MIME type
+.br
+(5) space-separated extensions matching that MIME type, or an empty string
+.br
+(6) newline
+.br
+\[char46].. separated by the NUL character. E.g.:
+.PP
+.nf
+.RS
+.ec ,
+$ fixext -Ir .
+,[char46],fB\0,fRdirectory,fB\0\0,fRinode/directory,fB\0,fR*,fB\0,fR
+,[char46]/.gitmodules,fB\0,fRASCII text,fB\0\0,fRtext/plain,fB\0,fRtxt,fB\0,fR
+,[char46]..
+.ec
+.RE
+.fi
+.PP
+
 .\" TODO: clarify if multiple MGC mean load magic from all these files
 .TP
 -M \fBMGC\fR

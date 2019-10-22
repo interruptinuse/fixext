@@ -65,6 +65,7 @@ struct Opts {
   detect:      bool,
   dump:        bool,
   nobuiltin:   bool,
+  matchinfo:   bool,
   magicfile:   String,
   extdot:      i32,
   verbose:     bool,
@@ -241,6 +242,8 @@ fn main() {
                               "Only print detected types (like `file --mime-type`)")
     (@arg dump:        -D ... group("action")
                               "Print known descriptions/MIME types and associated extensions")
+    (@arg matchinfo:   -I ... group("action")
+                              "Output null-separated match info")
     (@arg magicfile:   -M [MGC]
                           !empty_values +allow_hyphen_values
                               "Load magic definitions from MGC")
@@ -281,6 +284,7 @@ fn main() {
     get_flag!(nobuiltin);
     get_flag!(detect);
     get_flag!(dump);
+    get_flag!(matchinfo);
     get_flag!(verbose);
 
     o.extdot = match matches.value_of("extdot") {
@@ -452,18 +456,23 @@ fn main() {
     }
 
 
-    let (desc, mime, magic): (String, String, MagicMatch) = 'magic: {
+    let (desc, mime, magic, dexts, mexts):
+        (String, String, MagicMatch, Vec<String>, Vec<String>) = 'magic: {
       let desc = c.desc.file(&path).unwrap_or_default();
       let mime = c.mime.file(&path).unwrap_or_default();
+      let mut dexts: Vec<String> = vec![];
+      let mut mexts: Vec<String> = vec![];
 
       let mut result: MagicMatch = MagicMatch::None;
 
       if desc == mime && mime == String::default() {
-        break 'magic (desc, mime, result);
+        break 'magic (desc, mime, result, dexts, mexts);
       }
 
       for (r, exts) in &types.desc {
         if r.is_match(&*desc) {
+          dexts = exts.clone();
+
           if *exts == vec![String::from("?")] {
             verbose_path!(o, path_str, "{}",
               bold_format!(
@@ -478,10 +487,19 @@ fn main() {
 
       if let (Some(exts), MagicMatch::None) = (types.mime.get(&mime), &result) {
         result = MagicMatch::MIME(mime.clone(), exts.clone());
+        mexts = exts.clone();
       }
 
-      (desc.clone(), mime.clone(), result)
+      (desc.clone(), mime.clone(), result, dexts, mexts)
     };
+
+    if o.matchinfo {
+      println!("{}\0{}\0{}\0{}\0{}\0",
+               path_str,
+               desc, dexts.join(" "),
+               mime, mexts.join(" "));
+      return Ok(());
+    }
 
 
     let (exts, matched_desc) = match magic {
@@ -641,6 +659,35 @@ fn main() {
 
   let dir_visitor: &dyn Fn(PathBuf) -> Result<(),String> = &|path| {
     let path_str = path.as_os_str().to_string_lossy().into_owned();
+
+    if o.matchinfo {
+      let (desc, mime, dexts, mexts):
+          (String, String, Vec<String>, Vec<String>) = 'magic: {
+        let desc = c.desc.file(&path).unwrap_or_default();
+        let mime = c.mime.file(&path).unwrap_or_default();
+
+        let mut dexts: Vec<String> = vec![];
+        let mut mexts: Vec<String> = vec![];
+
+        for (r, exts) in &types.desc {
+          if r.is_match(&*desc) {
+            dexts = exts.clone();
+            break;
+          }
+        }
+
+        if let Some(exts) = types.mime.get(&mime) {
+          mexts = exts.clone();
+        }
+
+        (desc, mime, dexts, mexts)
+      };
+
+      println!("{}\0{}\0{}\0{}\0{}\0",
+               path_str,
+               desc, dexts.join(" "),
+               mime, mexts.join(" "));
+    }
 
     if !o.recursive {
       message!("{} {}", bold("File is a directory, skipping:"), path_str);
