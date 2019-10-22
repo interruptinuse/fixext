@@ -8,7 +8,6 @@ const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 const AUTHORS: Option<&'static str> = option_env!("CARGO_PKG_AUTHORS");
 const DESCRIP: Option<&'static str> = option_env!("CARGO_PKG_DESCRIPTION");
 
-// TODO: build.rs, mime.types.txt, cargo env variable (see above consts)
 const MIME_TYPES_CBOR: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/mime.types.cbor"));
 const DESC_TYPES_CBOR: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/desc.types.cbor"));
 
@@ -148,7 +147,6 @@ fn vec_si<T>(v: &[T], i: i32) -> Option<&[T]> {
 }
 
 
-// DFS order directory tree traversal
 fn visit_tree<OkT>(
   t:  &PathBuf,
   fv: &dyn Fn(PathBuf) -> Result<OkT,String>,
@@ -517,7 +515,6 @@ fn main() {
     }
 
 
-    // TODO: bikeshed dirname/basename
     let (dirname, basename) = path_to_dir_base(&path);
     let dotsplits: Vec<String> = basename.clone().split('.').map(|s| s.to_string()).collect();
 

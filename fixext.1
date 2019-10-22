@@ -49,6 +49,11 @@ skipping them.
 Append detected extension instead of replacing the current one.
 
 .TP
+-B
+Do not use built-in extension associations; only the file types specified with
+-Z/-X will be matched.
+
+.TP
 -F
 Only print matching descriptions/MIME types (like \(lqfile --mime-type\(rq, but
 if the description matches, it will output that).  For example (... indicates
@@ -82,11 +87,6 @@ image/gif gif
 .RE
 .fi
 .PP
-
-.TP
--B
-Do not use built-in extension associations; only the file types specified with
--Z/-X will be matched.
 
 .\" TODO: clarify if multiple MGC mean load magic from all these files
 .TP

@@ -1,9 +1,11 @@
 ROOT_DIR   = $(patsubst %/,%,$(dir $(realpath $(firstword $(MAKEFILE_LIST)))))
 VENDOR_DIR = $(ROOT_DIR)/vendor
 VERSION    = $(shell grep -m1 '^version' Cargo.toml | grep -Po '(?<=")\d+\.\d+\.\d+(?=")')
-WINDIST    = fixext-win64-$(VERSION)
-MINGW_TGT  = x86_64-w64-mingw32
-CARGO_TGT  = x86_64-pc-windows-gnu
+WINAPI     = win64
+WINDIST    = fixext-$(WINAPI)-$(VERSION)
+ARCH       = x86_64
+MINGW_TGT  = $(ARCH)-w64-mingw32
+CARGO_TGT  = $(ARCH)-pc-windows-gnu
 
 LIBGNURX = libgnurx-0.dll
 LIBMAGIC = libmagic-1.dll
