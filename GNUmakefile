@@ -32,9 +32,6 @@ $(WINDIST).zip: fixext.exe fixext.1.html magic.mgc $(DLLS)
 	zip -9 -r $(WINDIST).zip $(WINDIST)
 
 
-.PHONY: win64
-win64: update dist
-
 .PHONY: update
 update:
 	git submodule update
