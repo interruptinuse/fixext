@@ -5,6 +5,7 @@ authors  = ["inty <interruptinuse@gmail.com>"]
 edition  = "2018"
 build    = "build.rs"
 autobins = false
+repository  = "https://github.com/interruptinuse/fixext-rs.git"
 description = """
 Rename files so that their extensions match actual content
 """
