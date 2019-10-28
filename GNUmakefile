@@ -28,7 +28,7 @@ dist: $(WINDIST).zip
 $(WINDIST).zip: fixext.exe fixext.1.html magic.mgc $(DLLS)
 	rm -rf $(WINDIST) $(WINDIST).zip
 	mkdir -p $(WINDIST)
-	cp $^ $(WINDIST)
+	cp $(filter-out magic.mgc,$^) $(WINDIST)
 	zip -9 -r $(WINDIST).zip $(WINDIST)
 
 

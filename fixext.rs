@@ -13,9 +13,13 @@ const DESC_TYPES_CBOR: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/desc.ty
 
 #[cfg(not(windows))]
 const DEFAULT_MGC: &str = "/usr/share/misc/magic.mgc";
+#[cfg(not(windows))]
+const BUILTIN_MGC: &[u8] = &[];
 
 #[cfg(windows)]
-const DEFAULT_MGC: &str = "magic.mgc";
+const DEFAULT_MGC: &str = "";
+#[cfg(windows)]
+const BUILTIN_MGC: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/magic.mgc"));
 
 use std::fs;
 use std::process;
@@ -55,6 +59,12 @@ enum MagicMatch {
   None
 }
 
+#[derive(Debug)]
+enum MagicDatabase<'a> {
+  File(&'a str),
+  Buffer(&'a [u8])
+}
+
 #[derive(Debug, Default)]
 struct Opts {
   dry:         bool,
@@ -66,7 +76,7 @@ struct Opts {
   dump:        bool,
   nobuiltin:   bool,
   matchinfo:   bool,
-  magicfile:   String,
+  magicfile:   Option<String>,
   extdot:      i32,
   verbose:     bool,
 }
@@ -123,6 +133,32 @@ fn path_to_dir_base(s: &path::Path) -> (String, String) {
   }.as_os_str().to_string_lossy().to_string();
 
   (dirname, basename)
+}
+
+
+fn magic_load(cookie: &Cookie, db: MagicDatabase) {
+  #[allow(unused_macros)]
+  macro_rules! cook {
+    ($member:ident, $method:ident, $arg:ident, $error:expr) => (
+      cookie.$member.$method(&[&$arg]).expect(&*format!(
+        "Failed to initialize: {}: {}", stringify!($member), $error));
+    );
+  };
+
+  #[allow(unused_macros)]
+  macro_rules! load_both {
+    ($method:ident, $arg:ident, $error:expr) => (
+      cook!(desc, $method, $arg, $error);
+      cook!(mime, $method, $arg, $error);
+    );
+  };
+
+  match db {
+    MagicDatabase::File(s)   => { load_both!(load,         s,
+                                    format!("Invalid magic database: {}", s)); },
+    MagicDatabase::Buffer(b) => { load_both!(load_buffers, b,
+                                    "Invalid built-in magic database"); },
+  };
 }
 
 
@@ -293,16 +329,8 @@ fn main() {
     };
 
     o.magicfile = match matches.value_of("magicfile") {
-      Some(v)  => String::from(v),
-      None     => if cfg!(not(windows)) {
-        String::from(DEFAULT_MGC)
-      }
-      else {
-        let mut pb = std::env::current_exe().expect("Could not get current executable path");
-        pb.pop();
-        pb.push(DEFAULT_MGC);
-        pb.as_os_str().to_string_lossy().to_string()
-      }
+      Some(path) => Some(String::from(path)),
+      None       => None
     };
 
     o
@@ -344,10 +372,20 @@ fn main() {
             .expect("Failed to initialize: couldn't open a magic cookie with MAGIC_MIME_TYPE")
   };
 
-  c.desc.load(&[&o.magicfile])
-    .expect(&*format!("Failed to initialize: desc: could not load magic files: {:?}", &o.magicfile));
-  c.mime.load(&[&o.magicfile])
-    .expect(&*format!("Failed to initialize: mime: could not load magic files: {:?}", &o.magicfile));
+
+  let init_mgc: MagicDatabase = match &o.magicfile {
+    Some(p) => MagicDatabase::File(p),
+    None    => {
+      if cfg!(windows) {
+        MagicDatabase::Buffer(BUILTIN_MGC)
+      }
+      else {
+        MagicDatabase::File(DEFAULT_MGC)
+      }
+    }
+  };
+
+  magic_load(&c, init_mgc);
 
 
   macro_rules! message {
