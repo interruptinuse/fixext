@@ -192,7 +192,7 @@ dependencies = [
  "ansi_term 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glob 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "magic 0.12.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "magic 0.12.2 (git+https://github.com/interruptinuse/rust-magic)",
  "regex 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustyline 5.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -236,17 +236,17 @@ dependencies = [
 [[package]]
 name = "magic"
 version = "0.12.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+source = "git+https://github.com/interruptinuse/rust-magic#eff1ac88ef6a648ec8f99213654e2c871e2bfa45"
 dependencies = [
  "bitflags 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.62 (registry+https://github.com/rust-lang/crates.io-index)",
- "magic-sys 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "magic-sys 0.2.1 (git+https://github.com/interruptinuse/rust-magic-sys)",
 ]
 
 [[package]]
 name = "magic-sys"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+version = "0.2.1"
+source = "git+https://github.com/interruptinuse/rust-magic-sys#0c20fce1b73cd0f41c046caf449f25301d370609"
 dependencies = [
  "libc 0.2.62 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -575,8 +575,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 "checksum libc 0.2.62 (registry+https://github.com/rust-lang/crates.io-index)" = "34fcd2c08d2f832f376f4173a231990fa5aef4e99fb569867318a227ef4c06ba"
 "checksum log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)" = "14b6052be84e6b71ab17edffc2eeabf5c2c3ae1fdb464aae35ac50c67a44e1f7"
-"checksum magic 0.12.2 (registry+https://github.com/rust-lang/crates.io-index)" = "96f74caec41a12630bb8fd9546530a41addb720eb0c10593855f59ce96a779aa"
-"checksum magic-sys 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "17442cc60e34d501588c95bc976da04b6a87c51ab02370e95e1c2893a52df16c"
+"checksum magic 0.12.2 (git+https://github.com/interruptinuse/rust-magic)" = "<none>"
+"checksum magic-sys 0.2.1 (git+https://github.com/interruptinuse/rust-magic-sys)" = "<none>"
 "checksum memchr 2.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "88579771288728879b57485cc7d6b07d648c9f0141eb955f8ab7f9d45394468e"
 "checksum nix 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)" = "6c722bee1037d430d0f8e687bbdbf222f27cc6e4e68d5caf630857bb2b6dbdce"
 "checksum nodrop 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)" = "2f9667ddcc6cc8a43afc9b7917599d7216aa09c463919ea32c59ed6cac8bc945"
