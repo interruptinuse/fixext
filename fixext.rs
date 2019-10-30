@@ -189,17 +189,14 @@ fn visit_tree<OkT>(
   fv: &dyn Fn(PathBuf) -> Result<OkT,String>,
   dv: &dyn Fn(PathBuf) -> Result<OkT,String>,
   ev: &dyn Fn(PathBuf, String))
--> Vec<(PathBuf,Result<OkT,String>)>
 where OkT:      Clone,
 {
-  let mut results: Vec<(PathBuf,Result<OkT,String>)> = vec![];
-
   let metadata_result = fs::metadata(&t);
 
   if let Err(e) = metadata_result {
     let estr = e.to_string();
     (ev)(t.clone(), estr.clone());
-    return vec![(t.clone(), Err(estr.clone()))];
+    return;
   }
 
   let metadata = metadata_result.unwrap();
@@ -207,10 +204,8 @@ where OkT:      Clone,
   if metadata.is_dir() {
     let dir_result = (dv)(t.clone());
 
-    results.push((t.clone(), dir_result.clone()));
-
     if dir_result.is_err() {
-      return results;
+      return;
     }
 
     let rd = fs::read_dir(t);
@@ -218,8 +213,7 @@ where OkT:      Clone,
     if let Err(e) = rd {
       let estr = e.to_string();
       (ev)(t.clone(), estr.clone());
-      results.push((t.clone(), Err(estr.clone())));
-      return results;
+      return;
     }
 
     let rd = rd.unwrap();
@@ -229,21 +223,16 @@ where OkT:      Clone,
         Err(e) => {
           let estr = e.to_string();
           (ev)(t.clone(), estr.clone());
-          results.push((t.clone(), Err(estr.clone())));
         },
 
         Ok(de) => {
-          results.extend(visit_tree(&de.path(), fv, dv, ev));
+          visit_tree(&de.path(), fv, dv, ev);
         }
       }
     }
-  }
-  else {
-    results.push((t.clone(), (fv)(t.clone())));
-    return results;
+  } else {
+    let _ = (fv)(t.clone());
   };
-
-  return results;
 }
 
 
