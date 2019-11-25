@@ -1,25 +1,19 @@
+use std::collections::HashSet;
+use std::env;
 use std::error::Error;
+use std::fs;
 use std::io;
 use std::io::BufRead;
-use std::env;
-use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 use std::vec::Vec;
-use std::collections::HashSet;
 
-extern crate serde;
-
-extern crate serde_cbor;
-
-extern crate glob;
 use glob::glob;
 
-extern crate regex;
 use regex::Regex;
 
 
-fn main() -> Result<(), Box<dyn Error>>  {
+fn main() -> Result<(), Box<dyn Error>> {
   let target = env::var("TARGET").unwrap();
   let windows = target.contains("windows");
 
@@ -32,7 +26,6 @@ fn main() -> Result<(), Box<dyn Error>>  {
     println!("rerun-if-changed={}", magic_file.to_string_lossy());
     fs::copy("magic.mgc", magic_file).expect("could not find magic.mgc (run `make magic.mgc`)");
   }
-
 
   println!("rerun-if-changed=data");
 
@@ -47,11 +40,10 @@ fn main() -> Result<(), Box<dyn Error>>  {
   println!("rerun-if-changed={}", desc_types_cbor_file.to_string_lossy());
   println!("rerun-if-changed={}", mime_types_cbor_file.to_string_lossy());
 
-
   let mut desc_types_set: HashSet<String> = HashSet::new();
   let mut desc_types: Vec<(String, Vec<String>)> = vec![];
 
-  for /* desc.types file */ dtf in glob("data/*.desc.types").unwrap() {
+  for dtf in glob("data/*.desc.types").unwrap() {
     let p = match dtf {
       Ok(path) => path,
       e        => panic!("glob returned an error: {:?}", e)
@@ -100,11 +92,10 @@ fn main() -> Result<(), Box<dyn Error>>  {
   let desc_types_cbor = fs::File::create(desc_types_cbor_file).unwrap();
   serde_cbor::to_writer(desc_types_cbor, &desc_types)?;
 
-
   let mut mime_types_set: HashSet<String> = HashSet::new();
-  let mut mime_types: Vec<(String,Vec<String>)> = vec![];
+  let mut mime_types: Vec<(String, Vec<String>)> = vec![];
 
-  for /* mime.types file */ mtf in glob("data/*.mime.types").unwrap() {
+  for mtf in glob("data/*.mime.types").unwrap() {
     let p = match mtf {
       Ok(path) => path,
       e        => panic!("glob returned an error: {:?}", e)
@@ -158,14 +149,12 @@ fn main() -> Result<(), Box<dyn Error>>  {
   let mime_types_cbor = fs::File::create(mime_types_cbor_file).unwrap();
   serde_cbor::to_writer(mime_types_cbor, &mime_types)?;
 
-
   if windows {
     println!("cargo:rustc-link-lib=shlwapi");
     println!("cargo:rustc-link-search=native=.");
     println!("cargo:rustc-link-lib=gnurx-0");
     println!("cargo:rustc-link-lib=magic");
   }
-
 
   return Ok(());
 }
