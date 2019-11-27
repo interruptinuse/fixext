@@ -512,18 +512,6 @@ fn main() {
       (desc, mime, result, dexts, mexts)
     };
 
-    if o.matchinfo {
-      println!(
-        "{}\0{}\0{}\0{}\0{}\0",
-        path_str,
-        desc,
-        dexts.join(" "),
-        mime,
-        mexts.join(" ")
-      );
-      return Ok(());
-    }
-
     let (exts, matched_desc) = match magic {
       MagicMatch::Description(r, exts) => {
         verbose_path!(
@@ -628,6 +616,19 @@ fn main() {
       new_fullname.push(&new_basename);
       new_fullname
     };
+
+    if o.matchinfo {
+      println!(
+        "{}\0{}\0{}\0{}\0{}\0{}\0",
+        path_str,
+        new_fullname.display(),
+        desc,
+        dexts.join(" "),
+        mime,
+        mexts.join(" ")
+      );
+      return Ok(());
+    }
 
     if new_fullname == *path {
       verbose_path!(
@@ -739,7 +740,8 @@ fn main() {
       };
 
       println!(
-        "{}\0{}\0{}\0{}\0{}\0",
+        "{}\0{}\0{}\0{}\0{}\0{}\0",
+        path_str,
         path_str,
         desc,
         dexts.join(" "),

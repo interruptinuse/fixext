@@ -1,4 +1,4 @@
-.TH fixext 1 "fixext" "2019-10-28" "fixext v0.1.0"
+.TH fixext 1 "fixext" "2019-11-27" "fixext v0.1.0"
 
 
 .SH NAME
@@ -94,17 +94,24 @@ Output NUL-separated match information for each file.
 .nr step 1 1
 The output entries for each file path are:
 .br
-(1) File path, unescaped
+\fB(1)\fR File path, unescaped
 .br
-(2) libmagic human-readable description
+\fB(2)\fR Proposed renaming (equals to \fB(1)\fR for directories)
 .br
-(3) space-separated extensions matching that description, or an empty string
+\fB(3)\fR
+.IR libmagic (3)
+human-readable description
 .br
-(4) libmagic MIME type
+\fB(4)\fR Space-separated extensions matching that description, or an empty
+string
 .br
-(5) space-separated extensions matching that MIME type, or an empty string
+\fB(5)\fR
+.IR libmagic (3)
+MIME type
 .br
-(6) newline
+\fB(6)\fR Space-separated extensions matching that MIME type, or an empty string
+.br
+\fB(7)\fR Newline
 .br
 \[char46].. separated by the NUL character. E.g.:
 .PP
@@ -112,8 +119,8 @@ The output entries for each file path are:
 .RS
 .ec ,
 $ fixext -Ir .
-,[char46],fB\0,fRdirectory,fB\0\0,fRinode/directory,fB\0,fR*,fB\0,fR
-,[char46]/.gitmodules,fB\0,fRASCII text,fB\0\0,fRtext/plain,fB\0,fRtxt,fB\0,fR
+,[char46],fB\0,fR.,fB\0,fRdirectory,fB\0\0,fRinode/directory,fB\0,fR*,fB\0,fR
+,[char46]/.gitmodules,fB\0,fR./.txt,fB\0,fRASCII text,fB\0\0,fRtext/plain,fB\0,fRtxt,fB\0,fR
 ,[char46]..
 .ec
 .RE
