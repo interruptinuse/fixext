@@ -12,6 +12,10 @@ LIBMAGIC = libmagic-1.dll
 PTHREAD  = pthreadGC2.dll
 DLLS     = $(LIBGNURX) $(LIBMAGIC) $(PTHREAD)
 
+GAWK = gawk
+PERL = perl
+SED  = sed
+
 
 
 .PHONY: list
@@ -19,8 +23,23 @@ list:
 	@echo "The following targets are available:"
 	@echo "  $(MAKE) list"
 	@$(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null\
-	  | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}'\
-	  | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$' | sed 's/^/  $(MAKE) /g'
+	  | $(GAWK) -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}'\
+	  | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$' | $(SED) 's/^/  $(MAKE) /g'
+
+	@echo
+
+	@echo "The following variables and their defaults are available:"
+	@$(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null\
+	  | $(GAWK) '/^# Variables/,/^# Directories/' \
+	  | $(GAWK) 'match($$0, /^# makefile .*line ([[:digit:]]+)\)$$/, m) {getline; print m[1], $$0}' \
+	  | sort -nru -k1,1 \
+	  | cut -d' ' -f2- \
+	  | tac \
+	  | $(GAWK) 'END {print max} {l=length($$1);max=(max>l?max:l);print}' \
+	  | tac \
+	  | $(PERL) -ale 'BEGIN{$$,=" ";$$a=int(<STDIN>)}print"@{[sprintf(\"%-$${a}s\",@F[0]),@F[1..$$#F]]}"' \
+	  | tac \
+	  | $(SED) 's,^,  ,g'
 
 .PHONY: dist
 dist: $(WINDIST).zip
