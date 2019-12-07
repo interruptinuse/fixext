@@ -15,6 +15,7 @@ use regex::Regex;
 
 fn main() -> Result<(), Box<dyn Error>> {
   let target = env::var("TARGET").unwrap();
+  let target_arch = target.split('-').nth(0).unwrap();
   let windows = target.contains("windows");
 
   let out_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());
@@ -23,8 +24,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
   if windows {
     let magic_file = out_dir.join("magic.mgc");
+    let magic_file_src = format!("vendor/build/{}/magic.mgc", target_arch);
     println!("rerun-if-changed={}", magic_file.to_string_lossy());
-    fs::copy("magic.mgc", magic_file).expect("could not find magic.mgc (run `make magic.mgc`)");
+    fs::copy(magic_file_src, magic_file).expect("could not find magic.mgc (run `./windist.sh`)");
   }
 
   println!("rerun-if-changed=data");
@@ -150,10 +152,12 @@ fn main() -> Result<(), Box<dyn Error>> {
   serde_cbor::to_writer(mime_types_cbor, &mime_types)?;
 
   if windows {
+    println!("cargo:rustc-link-search=native=vendor/build/{}/", target_arch);
+    println!("cargo:rustc-link-lib=static=magic");
+    println!("cargo:rustc-link-lib=static=gnurx");
+    println!("cargo:rustc-link-lib=static=winpthread");
+    println!("cargo:rustc-link-lib=msvcrt");
     println!("cargo:rustc-link-lib=shlwapi");
-    println!("cargo:rustc-link-search=native=.");
-    println!("cargo:rustc-link-lib=gnurx-0");
-    println!("cargo:rustc-link-lib=magic");
   }
 
   return Ok(());

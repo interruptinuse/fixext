@@ -1,10 +1,8 @@
 /*.zip
 /fixext.exe
+/fixext32.exe
 /fixext.1.html
-/fixext-win*-*.*.*/
-/target
-/libgnurx-0.dll
-/libmagic.dll
-/libmagic-1.dll
-/pthreadGC2.dll
+/fixext-win-*/
+/target/
+/vendor/build/
 /magic.mgc
