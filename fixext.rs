@@ -575,12 +575,18 @@ fn main() {
           o.extdot
         )
       );
-      return Err(String::from("extdot index out of bounds"));
+
+      if !o.matchinfo {
+        return Err(String::from("extdot index out of bounds"));
+      }
     }
 
     if exts == vec!["*"] {
       verbose_path!(o, path_str, "{}", bold("File ignored, skipping:"));
-      return Ok(());
+
+      if !o.matchinfo {
+        return Ok(());
+      }
     }
 
     if exts.is_empty() {
@@ -590,7 +596,10 @@ fn main() {
         "{}",
         bold("No extensions matched for file, skipping:")
       );
-      return Err(String::from("No matched extensions"));
+
+      if !o.matchinfo {
+        return Err(String::from("No matched extensions"));
+      }
     }
 
     if !ext.is_empty() && exts.contains(&ext) {
@@ -600,7 +609,10 @@ fn main() {
         "{}",
         bold("File has a valid matched extension, skipping:")
       );
-      return Ok(());
+
+      if !o.matchinfo {
+        return Ok(());
+      }
     }
 
     let new_ext = String::from(&exts[0]);
