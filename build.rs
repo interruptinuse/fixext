@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::env;
-use std::error::Error;
 use std::fs;
 use std::io;
 use std::io::BufRead;
@@ -13,7 +12,8 @@ use glob::glob;
 use regex::Regex;
 
 
-fn main() -> Result<(), Box<dyn Error>> {
+
+fn main() {
   let target = env::var("TARGET").unwrap();
   let target_arch = target.split('-').nth(0).unwrap();
   let windows = target.contains("windows");
@@ -92,7 +92,7 @@ fn main() -> Result<(), Box<dyn Error>> {
   }
 
   let desc_types_cbor = fs::File::create(desc_types_cbor_file).unwrap();
-  serde_cbor::to_writer(desc_types_cbor, &desc_types)?;
+  serde_cbor::to_writer(desc_types_cbor, &desc_types).unwrap();
 
   let mut mime_types_set: HashSet<String> = HashSet::new();
   let mut mime_types: Vec<(String, Vec<String>)> = vec![];
@@ -149,7 +149,7 @@ fn main() -> Result<(), Box<dyn Error>> {
   }
 
   let mime_types_cbor = fs::File::create(mime_types_cbor_file).unwrap();
-  serde_cbor::to_writer(mime_types_cbor, &mime_types)?;
+  serde_cbor::to_writer(mime_types_cbor, &mime_types).unwrap();
 
   if windows {
     println!("cargo:rustc-link-search=native=vendor/build/{}/", target_arch);

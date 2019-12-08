@@ -6,5 +6,5 @@
 	url = https://github.com/TimothyGu/libgnurx
 [submodule "vendor/winpthreads"]
 	path = vendor/winpthreads
-	url = git@github.com:/interruptinuse/mingw-w64-subdirs
+	url = https://github.com/interruptinuse/mingw-w64-subdirs
 	branch = subdir/mingw-w64-libraries/winpthreads
