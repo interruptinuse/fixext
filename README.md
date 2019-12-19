@@ -16,3 +16,6 @@
   mp4.mkv -> mp4.mp4
   ```
   For more information, try `fixext --help` or `man ./fixext.1`.
+
+  Wrench icon taken from Fugue Icons by Yusuke Kamiyamane:
+  https://p.yusukekamiyamane.com/

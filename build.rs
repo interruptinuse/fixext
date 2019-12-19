@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::path;
 use std::env;
 use std::fs;
 use std::io;
@@ -6,11 +7,13 @@ use std::io::BufRead;
 use std::path::Path;
 use std::path::PathBuf;
 use std::vec::Vec;
+use std::process::Command;
 
 use glob::glob;
 
 use regex::Regex;
 
+use winres::WindowsResource;
 
 
 fn main() {
@@ -24,7 +27,7 @@ fn main() {
 
   if windows {
     let magic_file = out_dir.join("magic.mgc");
-    let magic_file_src = format!("vendor/build/{}/magic.mgc", target_arch);
+    let magic_file_src = format!("vendor/build/magic.mgc");
     println!("rerun-if-changed={}", magic_file.to_string_lossy());
     fs::copy(magic_file_src, magic_file).expect("could not find magic.mgc (run `./windist.sh`)");
   }
@@ -158,7 +161,104 @@ fn main() {
     println!("cargo:rustc-link-lib=static=winpthread");
     println!("cargo:rustc-link-lib=msvcrt");
     println!("cargo:rustc-link-lib=shlwapi");
-  }
 
-  return Ok(());
+    let exe_name = if target_arch == "i686" {
+      "fixext32.exe"
+    } else {
+      "fixext.exe"
+    };
+
+    let (tool_path, tool_windres, tool_ar) = {
+      fn path_to_dir_base(s: &path::Path) -> (String, String) {
+        use std::path::Component::*;
+        let components = s.components().collect::<Vec<path::Component>>();
+
+        let dirname = {
+          if components.len() == 1 {
+            match components[0] {
+              CurDir                => components[0],
+              ParentDir | Normal(_) => path::Component::CurDir,
+              _                     => path::Component::RootDir,
+            }.as_os_str().to_string_lossy().to_string()
+          } else {
+            let mut pb = PathBuf::new();
+
+            for s in &components[0..components.len()-1] {
+              pb.push(s);
+            }
+
+            String::from(pb.as_os_str().to_string_lossy())
+          }
+        };
+
+        let basename = {
+          if components.len() == 1 {
+            match components[0] {
+              CurDir | ParentDir | Normal(_) => {
+                let mut pb = PathBuf::new();
+                pb.push(path::Component::CurDir);
+                pb.push(components[0]);
+                pb
+              },
+              _ => {
+                let mut pb = PathBuf::new();
+                pb.push(path::Component::RootDir);
+                pb
+              },
+            }
+          } else {
+            let mut pb = PathBuf::new();
+            pb.push(path::Component::CurDir);
+            pb.push(components[components.len()-1]);
+            pb
+          }
+        }.as_os_str().to_string_lossy().to_string();
+
+        (dirname, basename)
+      }
+
+
+      let tool_gcc = env::var("MINGW_GCC")
+        .unwrap_or(format!("{}-w64-mingw32-gcc", target_arch));
+
+      let get_tool_path = |t: &str| {
+        let mut p = String::from_utf8(
+          Command::new(&tool_gcc)
+            .arg(format!("-print-prog-name={}", t))
+            .output()
+            .expect(&*format!("Failed to execute {} -print-prog-name={}", tool_gcc, t))
+            .stdout)
+          .expect(
+            &*format!(
+              "{} -print-prog-name={} did not return valid UTF-8",
+              tool_gcc,
+              t)
+          );
+
+        p.pop();
+
+        let (d, b) = path_to_dir_base(Path::new(&p));
+        (p, d, b)
+      };
+
+      let (w, w_d, w_b) = get_tool_path("windres");
+      let (a, a_d, a_b) = get_tool_path("ar");
+
+      if w_d != a_d {
+        panic!("{} dirname is not the same as dirname {}", w, a);
+      }
+
+      (w_d, w_b, a_b)
+    };
+
+
+    let mut res = WindowsResource::new();
+    res.set_icon("asset/wrench-pencil.ico")
+       .set_language(0x0409) // MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US)
+       .set("InternalName", exe_name)
+       .set_toolkit_path(&tool_path)
+       .set_windres_path(&tool_windres)
+       .set_ar_path(&tool_ar);
+    res.compile().expect("res.compile() failed");
+  }
 }
