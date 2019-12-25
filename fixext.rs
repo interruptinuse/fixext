@@ -615,13 +615,25 @@ fn main() {
       }
     }
 
-    let new_ext = String::from(&exts[0]);
-
-    let new_basename: String = if o.append || !has_ext {
-      basename
+    let new_ext = if !exts.is_empty() {
+      Some(String::from(&exts[0]))
     } else {
-      String::from(&basename.clone()[0..basename.len() - ext.len() - 1])
-    } + &*format!(".{}", new_ext);
+      None
+    };
+
+    let new_basename: String =
+      if let Some(e) = new_ext {
+        (
+          if o.append || !has_ext {
+            basename
+          } else {
+            String::from(&basename.clone()[0..basename.len() - ext.len() - 1])
+          }
+        ) + &*format!(".{}", e)
+      }
+      else {
+        basename
+      };
 
     let new_fullname: PathBuf = {
       let mut new_fullname: PathBuf = PathBuf::from(&dirname);
