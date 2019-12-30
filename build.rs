@@ -162,11 +162,7 @@ fn main() {
     println!("cargo:rustc-link-lib=msvcrt");
     println!("cargo:rustc-link-lib=shlwapi");
 
-    let exe_name = if target_arch == "i686" {
-      "fixext32.exe"
-    } else {
-      "fixext.exe"
-    };
+    let exe_name = "fixext.exe";
 
     let (tool_path, tool_windres, tool_ar) = {
       fn path_to_dir_base(s: &path::Path) -> (String, String) {

@@ -2,8 +2,9 @@ THIS    := $(realpath $(firstword $(MAKEFILE_LIST)))
 ROOT    := $(patsubst %/,%,$(dir $(THIS)))
 VENDOR  := vendor
 BUILD   := $(VENDOR)/build
+ARCH    := i686
 VERSION := $(shell git describe --tags --dirty | cut -c2-)
-WINDIST := fixext-win-$(VERSION)
+WINDIST := fixext-win32-$(VERSION)
 CARGO   := cargo
 
 BASH  = bash
@@ -19,7 +20,7 @@ LIBGNURX      := libgnurx.a
 LIBMAGIC      := libmagic.a
 LIBS          := $(LIBWINPTHREAD) $(LIBGNURX) $(LIBMAGIC)
 LIBDIRS       := winpthreads mingw-libgnurx file
-DISTFILES     := fixext32.exe fixext.exe fixext.1.html
+DISTFILES     := fixext.exe fixext.1.html
 
 
 TZ := UTC
@@ -64,16 +65,9 @@ fixext.1.html: fixext.1
 	env TZ=UTC $(GROFF) -mandoc -Thtml <$< >$@
 
 
-define create-exe-target
-$1: $$(addprefix $$(BUILD)/$2/,$$(LIBS)) $$(BUILD)/magic.mgc
-	$$(eval CARGO_TGT = $2-pc-windows-gnu)
-	$$(CARGO) build --target $$(CARGO_TGT) --release
-	cp target/$$(CARGO_TGT)/release/fixext.exe $1
-endef
-
-
-$(eval $(call create-exe-target,fixext32.exe,i686))
-$(eval $(call create-exe-target,fixext.exe,x86_64))
+fixext.exe: $(addprefix $(BUILD)/$(ARCH)/,$(LIBS)) $(BUILD)/magic.mgc
+	$(CARGO) build --target $(ARCH)-pc-windows-gnu --release
+	cp target/$(ARCH)-pc-windows-gnu/release/fixext.exe $@
 
 
 $(VENDOR)/file/configure: | $(VENDOR)/file/configure.ac
@@ -97,49 +91,43 @@ $(BUILD)/magic.mgc: $(VENDOR)/file/configure
 	cp magic/magic.mgc ..
 
 
-define create-vendored-deps
-$$(BUILD)/$1/winpthreads $$(BUILD)/$1/mingw-libgnurx $$(BUILD)/$1/file:
-	mkdir -p $$@
+$(BUILD)/$(ARCH)/winpthreads $(BUILD)/$(ARCH)/mingw-libgnurx $(BUILD)/$(ARCH)/file:
+	mkdir -p $@
 
-.ONESHELL: $$(addprefix $$(BUILD)/$1/,$$(LIBS))
+.ONESHELL: $(addprefix $(BUILD)/$(ARCH)/,$(LIBS))
 
-$$(BUILD)/$1/$$(LIBWINPTHREAD): | $$(BUILD)/$1/winpthreads
+$(BUILD)/$(ARCH)/$(LIBWINPTHREAD): | $(BUILD)/$(ARCH)/winpthreads
 	set -e
-	cd $$(BUILD)/$1/winpthreads
-	../../../winpthreads/configure --host=$1-w64-mingw32 \
+	cd $(BUILD)/$(ARCH)/winpthreads
+	../../../winpthreads/configure --host=$(ARCH)-w64-mingw32 \
 	  --enable-static --disable-shared
-	$$(MAKE) clean
-	$$(MAKE)
-	cp .libs/$$(LIBWINPTHREAD) ..
-	$1-w64-mingw32-objcopy -R.rsrc ../$$(LIBWINPTHREAD)
+	$(MAKE) clean
+	$(MAKE)
+	cp .libs/$(LIBWINPTHREAD) ..
+	$(ARCH)-w64-mingw32-objcopy -R.rsrc ../$(LIBWINPTHREAD)
 
-$$(BUILD)/$1/$$(LIBGNURX): $$(BUILD)/$1/$$(LIBWINPTHREAD) | $$(BUILD)/$1/mingw-libgnurx
+$(BUILD)/$(ARCH)/$(LIBGNURX): $(BUILD)/$(ARCH)/$(LIBWINPTHREAD) | $(BUILD)/$(ARCH)/mingw-libgnurx
 	set -e
-	cd $$(BUILD)/$1/mingw-libgnurx
-	$1-w64-mingw32-gcc -c -o regex.o -I$$(ROOT)/$$(VENDOR)/mingw-libgnurx $$(CFLAGS) \
-	  $$(ROOT)/$$(VENDOR)/mingw-libgnurx/regex.c -Wl,-Bstatic -L.. -lwinpthread \
+	cd $(BUILD)/$(ARCH)/mingw-libgnurx
+	$(ARCH)-w64-mingw32-gcc -c -o regex.o -I$(ROOT)/$(VENDOR)/mingw-libgnurx $(CFLAGS) \
+	  $(ROOT)/$(VENDOR)/mingw-libgnurx/regex.c -Wl,-Bstatic -L.. -lwinpthread \
 	  -static-libgcc -static-libstdc++
-	$1-w64-mingw32-ar rcs -o $$(LIBGNURX) regex.o
-	cp $$(LIBGNURX) ..
-	$1-w64-mingw32-objcopy -R.rsrc ../$$(LIBGNURX)
+	$(ARCH)-w64-mingw32-ar rcs -o $(LIBGNURX) regex.o
+	cp $(LIBGNURX) ..
+	$(ARCH)-w64-mingw32-objcopy -R.rsrc ../$(LIBGNURX)
 
-$$(BUILD)/$1/$$(LIBMAGIC): $$(VENDOR)/file/configure \
-                             $$(addprefix $$(BUILD)/$1/,$$(LIBWINPTHREAD) $$(LIBGNURX)) \
-                             | $$(BUILD)/$1/file
+$(BUILD)/$(ARCH)/$(LIBMAGIC): $(VENDOR)/file/configure \
+                             $(addprefix $(BUILD)/$(ARCH)/,$(LIBWINPTHREAD) $(LIBGNURX)) \
+                             | $(BUILD)/$(ARCH)/file
 	set -e
-	mkdir -p $$(BUILD)/$1/file
-	cd $$(BUILD)/$1/file
+	mkdir -p $(BUILD)/$(ARCH)/file
+	cd $(BUILD)/$(ARCH)/file
 	export LDFLAGS="-Wl,-Bdynamic -lshlwapi -Wl,-Bstatic -static-libgcc \
 	  -static-libstdc++ -L.. -lwinpthread"
-	export CFLAGS="-I$$(ROOT)/$$(VENDOR)/mingw-libgnurx"
-	../../../file/configure --host=$1-w64-mingw32 --enable-static --disable-shared
-	$$(MAKE) clean
-	$$(MAKE) -C src magic.h
-	$$(MAKE) -C src libmagic.la
-	cp src/.libs/$$(LIBMAGIC) ..
-	$1-w64-mingw32-objcopy -R.rsrc ../$$(LIBMAGIC)
-endef
-
-
-$(eval $(call create-vendored-deps,i686))
-$(eval $(call create-vendored-deps,x86_64))
+	export CFLAGS="-I$(ROOT)/$(VENDOR)/mingw-libgnurx"
+	../../../file/configure --host=$(ARCH)-w64-mingw32 --enable-static --disable-shared
+	$(MAKE) clean
+	$(MAKE) -C src magic.h
+	$(MAKE) -C src libmagic.la
+	cp src/.libs/$(LIBMAGIC) ..
+	$(ARCH)-w64-mingw32-objcopy -R.rsrc ../$(LIBMAGIC)
