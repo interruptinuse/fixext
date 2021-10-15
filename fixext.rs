@@ -11,12 +11,12 @@ const MIME_TYPES_CBOR: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/mime.ty
 const DESC_TYPES_CBOR: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/desc.types.cbor"));
 
 #[cfg(not(windows))]
-const DEFAULT_MGC: &str = "/usr/share/misc/magic.mgc";
+const DEFAULT_MGC: Option<&'static str> = option_env!("DEFAULT_MAGIC_FILE_PATH");
 #[cfg(not(windows))]
 const BUILTIN_MGC: &[u8] = &[];
 
 #[cfg(windows)]
-const DEFAULT_MGC: &str = "";
+const DEFAULT_MGC: Option<&'static str> = Some("");
 #[cfg(windows)]
 const BUILTIN_MGC: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/magic.mgc"));
 
@@ -356,7 +356,7 @@ fn main() {
       if cfg!(windows) {
         MagicDatabase::Buffer(BUILTIN_MGC)
       } else {
-        MagicDatabase::File(DEFAULT_MGC)
+        MagicDatabase::File(DEFAULT_MGC.unwrap_or("/usr/share/misc/magic.mgc"))
       }
     }
   };
