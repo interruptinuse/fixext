@@ -18,7 +18,7 @@ use winres::WindowsResource;
 
 fn main() {
   let target = env::var("TARGET").unwrap();
-  let target_arch = target.split('-').nth(0).unwrap();
+  let target_arch = target.split('-').next().unwrap();
   let windows = target.contains("windows");
 
   let out_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());
@@ -27,7 +27,7 @@ fn main() {
 
   if windows {
     let magic_file = out_dir.join("magic.mgc");
-    let magic_file_src = format!("vendor/build/magic.mgc");
+    let magic_file_src = "vendor/build/magic.mgc".to_string();
     println!("rerun-if-changed={}", magic_file.to_string_lossy());
     fs::copy(magic_file_src, magic_file).expect("could not find magic.mgc (run `./windist.sh`)");
   }
@@ -71,14 +71,14 @@ fn main() {
         continue;
       }
 
-      let splits: Vec<String> = l.clone().split("\t").map(|s| s.to_string()).collect();
+      let splits: Vec<String> = (*l).split('\t').map(|s| s.to_string()).collect();
 
       let regex = splits[0].to_string();
       let exts  = (&splits[1..]).to_vec();
 
       eprintln!("Description: {}, exts: {:?}", regex, exts);
 
-      if let Err(_) = Regex::new(&*regex) {
+      if Regex::new(&*regex).is_err() {
         eprintln!("Description is an invalid regex, skipping");
         continue;
       }
@@ -123,7 +123,7 @@ fn main() {
         continue;
       }
 
-      let splits: Vec<String> = l.clone().split(" ").map(|s| s.to_string()).collect();
+      let splits: Vec<String> = (*l).split(' ').map(|s| s.to_string()).collect();
 
       let mime = splits[0].to_string();
       let exts = (&splits[1..]).to_vec();
@@ -135,7 +135,7 @@ fn main() {
         continue;
       }
 
-      if exts.len() == 0 {
+      if exts.is_empty() {
         eprintln!("MIME is associated with no extensions, skipping");
         continue;
       }
@@ -240,9 +240,7 @@ fn main() {
       let (w, w_d, w_b) = get_tool_path("windres");
       let (a, a_d, a_b) = get_tool_path("ar");
 
-      if w_d != a_d {
-        panic!("{} dirname is not the same as dirname {}", w, a);
-      }
+      assert!((w_d == a_d), "{} dirname is not the same as dirname {}", w, a);
 
       (w_d, w_b, a_b)
     };

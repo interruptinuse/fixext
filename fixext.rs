@@ -28,6 +28,7 @@ use std::fs;
 use std::path;
 use std::path::Component::*;
 use std::path::PathBuf;
+use std::path::Path;
 use std::process;
 use std::vec::Vec;
 
@@ -52,7 +53,7 @@ struct Cookie {
 #[derive(Debug)]
 enum MagicMatch {
   Description(Regex, Vec<String>),
-  MIME(String, Vec<String>),
+  Mime(String, Vec<String>),
   None,
 }
 
@@ -134,7 +135,7 @@ fn magic_load(cookie: &Cookie, db: MagicDatabase) {
       cookie.$member.$method(&[&$arg]).expect(&*format!(
         "Failed to initialize: {}: {}", stringify!($member), $error));
     };
-  };
+  }
 
   #[allow(unused_macros)]
   macro_rules! load_both {
@@ -142,7 +143,7 @@ fn magic_load(cookie: &Cookie, db: MagicDatabase) {
       cook!(desc, $method, $arg, $error);
       cook!(mime, $method, $arg, $error);
     };
-  };
+  }
 
   match db {
     MagicDatabase::File(s)   => { load_both!(load,         s,
@@ -173,7 +174,7 @@ fn vec_si<T>(v: &[T], i: i32) -> Option<&[T]> {
 }
 
 fn visit_tree<OkT>(
-  t: &PathBuf,
+  t: &Path,
   fv: &dyn Fn(PathBuf) -> Result<OkT, String>,
   dv: &dyn Fn(PathBuf) -> Result<OkT, String>,
   ev: &dyn Fn(PathBuf, String),
@@ -184,14 +185,14 @@ fn visit_tree<OkT>(
 
   if let Err(e) = metadata_result {
     let estr = e.to_string();
-    (ev)(t.clone(), estr);
+    (ev)(t.to_path_buf(), estr);
     return;
   }
 
   let metadata = metadata_result.unwrap();
 
   if metadata.is_dir() {
-    let dir_result = (dv)(t.clone());
+    let dir_result = (dv)(t.to_path_buf());
 
     if dir_result.is_err() {
       return;
@@ -201,7 +202,7 @@ fn visit_tree<OkT>(
 
     if let Err(e) = rd {
       let estr = e.to_string();
-      (ev)(t.clone(), estr);
+      (ev)(t.to_path_buf(), estr);
       return;
     }
 
@@ -211,7 +212,7 @@ fn visit_tree<OkT>(
       match entry {
         Err(e) => {
           let estr = e.to_string();
-          (ev)(t.clone(), estr.clone());
+          (ev)(t.to_path_buf(), estr.clone());
         }
 
         Ok(de) => {
@@ -220,7 +221,7 @@ fn visit_tree<OkT>(
       }
     }
   } else {
-    let _ = (fv)(t.clone());
+    let _ = (fv)(t.to_path_buf());
   };
 }
 
@@ -304,10 +305,7 @@ fn main() {
       None     => -1
     };
 
-    o.magicfile = match matches.value_of("magicfile") {
-      Some(path) => Some(String::from(path)),
-      None       => None
-    };
+    o.magicfile = matches.value_of("magicfile").map(String::from);
 
     o
   };
@@ -385,7 +383,7 @@ fn main() {
 
   macro_rules! bold_format {
     ($fmt:expr, $($arg:tt)*) => {
-      bold(&*format!($fmt, $($arg)*));
+      bold(&*format!($fmt, $($arg)*))
     };
   }
 
@@ -430,9 +428,7 @@ fn main() {
           .map(|s| s.to_string())
           .collect();
 
-        if !m.contains('/') {
-          panic!("Invalid MIME in option '-X{}': no forward slash", m);
-        }
+        assert!(m.contains('/'), "Invalid MIME in option '-X{}': no forward slash", m);
 
         result.insert(m.clone(), exts);
       }),
@@ -504,7 +500,7 @@ fn main() {
       }
 
       if let (Some(exts), MagicMatch::None) = (types.mime.get(&mime), &result) {
-        result = MagicMatch::MIME(mime.clone(), exts.clone());
+        result = MagicMatch::Mime(mime.clone(), exts.clone());
         mexts = exts.clone();
       }
 
@@ -526,7 +522,7 @@ fn main() {
         );
         (exts, &*desc)
       }
-      MagicMatch::MIME(m, exts) => {
+      MagicMatch::Mime(m, exts) => {
         verbose_path!(
           o,
           path_str,
@@ -556,7 +552,7 @@ fn main() {
     }
 
     let (dirname, basename) = path_to_dir_base(&path);
-    let dotsplits: Vec<String> = basename.clone().split('.').map(|s| s.to_string()).collect();
+    let dotsplits: Vec<String> = basename.split('.').map(|s| s.to_string()).collect();
 
     let has_ext = basename.contains('.');
 
@@ -626,7 +622,7 @@ fn main() {
           if o.append || !has_ext {
             basename
           } else {
-            String::from(&basename.clone()[0..basename.len() - ext.len() - 1])
+            String::from(&basename[0..basename.len() - ext.len() - 1])
           }
         ) + &*format!(".{}", e)
       }
@@ -741,7 +737,7 @@ fn main() {
     let path_str = path.as_os_str().to_string_lossy().into_owned();
 
     if o.matchinfo {
-      let (desc, mime, dexts, mexts): (String, String, Vec<String>, Vec<String>) = 'magic: {
+      let (desc, mime, dexts, mexts): (String, String, Vec<String>, Vec<String>) = {
         let desc = c.desc.file(&path).unwrap_or_default();
         let mime = c.mime.file(&path).unwrap_or_default();
 
