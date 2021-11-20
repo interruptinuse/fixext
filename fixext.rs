@@ -31,7 +31,6 @@ use std::path::PathBuf;
 use std::process;
 use std::vec::Vec;
 
-use magic::flags::MIME_TYPE;
 use magic::CookieFlags;
 
 use regex::Regex;
@@ -346,7 +345,7 @@ fn main() {
   let c = Cookie {
     desc: magic::Cookie::open(CookieFlags::default())
       .expect("Failed to initialize: couldn't open a magic cookie with default flags"),
-    mime: magic::Cookie::open(MIME_TYPE)
+    mime: magic::Cookie::open(CookieFlags::MIME_TYPE)
       .expect("Failed to initialize: couldn't open a magic cookie with MAGIC_MIME_TYPE"),
   };
 

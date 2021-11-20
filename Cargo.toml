@@ -15,7 +15,7 @@ name = "fixext"
 path = "fixext.rs"
 
 [dependencies]
-magic      = { git = "https://github.com/interruptinuse/rust-magic" }
+magic      = "0.13.0-alpha"
 serde      = { version = "^1.0", features = ["derive"] }
 serde_cbor = "^0.10"
 regex      = "1"
