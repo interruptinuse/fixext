@@ -129,7 +129,7 @@ dependencies = [
 
 [[package]]
 name = "fixext"
-version = "0.1.0"
+version = "0.1.0-alpha"
 dependencies = [
  "ansi_term 0.12.1",
  "clap",
