@@ -72,7 +72,7 @@ fixext.exe: $(addprefix $(BUILD)/$(ARCH)/,$(LIBS)) $(BUILD)/magic.mgc
 
 $(VENDOR)/file/configure: | $(VENDOR)/file/configure.ac
 	cd $(VENDOR)/file \
-	  && autoreconf -fvi
+	  && libtoolize && autoreconf -fvi
 
 
 $(VENDOR)/file/configure.ac:
