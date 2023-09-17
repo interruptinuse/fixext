@@ -104,7 +104,6 @@ $(BUILD)/$(ARCH)/$(LIBWINPTHREAD): | $(BUILD)/$(ARCH)/winpthreads
 	$(MAKE) clean
 	$(MAKE)
 	cp .libs/$(LIBWINPTHREAD) ..
-	$(ARCH)-w64-mingw32-objcopy -R.rsrc ../$(LIBWINPTHREAD)
 
 $(BUILD)/$(ARCH)/$(LIBGNURX): $(BUILD)/$(ARCH)/$(LIBWINPTHREAD) | $(BUILD)/$(ARCH)/mingw-libgnurx
 	set -e
@@ -114,7 +113,6 @@ $(BUILD)/$(ARCH)/$(LIBGNURX): $(BUILD)/$(ARCH)/$(LIBWINPTHREAD) | $(BUILD)/$(ARC
 	  -static-libgcc -static-libstdc++
 	$(ARCH)-w64-mingw32-ar rcs -o $(LIBGNURX) regex.o
 	cp $(LIBGNURX) ..
-	$(ARCH)-w64-mingw32-objcopy -R.rsrc ../$(LIBGNURX)
 
 $(BUILD)/$(ARCH)/$(LIBMAGIC): $(VENDOR)/file/configure \
                              $(addprefix $(BUILD)/$(ARCH)/,$(LIBWINPTHREAD) $(LIBGNURX)) \
@@ -130,4 +128,3 @@ $(BUILD)/$(ARCH)/$(LIBMAGIC): $(VENDOR)/file/configure \
 	$(MAKE) -C src magic.h
 	$(MAKE) -C src libmagic.la
 	cp src/.libs/$(LIBMAGIC) ..
-	$(ARCH)-w64-mingw32-objcopy -R.rsrc ../$(LIBMAGIC)
