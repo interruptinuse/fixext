@@ -623,9 +623,8 @@ checksum = "c811ca4a8c853ef420abd8592ba53ddbbac90410fab6903b3e79972a631f7680"
 
 [[package]]
 name = "winres"
-version = "0.1.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b68db261ef59e9e52806f688020631e987592bd83619edccda9c47d42cde4f6c"
+version = "0.1.11"
+source = "git+https://github.com/Skirmisher/winres?rev=7333e0ff201d25eaaa70352682cd1a37614f93f4#7333e0ff201d25eaaa70352682cd1a37614f93f4"
 dependencies = [
  "toml",
 ]

@@ -66,7 +66,7 @@ fixext.1.html: fixext.1
 
 
 fixext.exe: $(addprefix $(BUILD)/$(ARCH)/,$(LIBS)) $(BUILD)/magic.mgc
-	$(CARGO) build --target $(ARCH)-pc-windows-gnu --release
+	WINDRES=$(ARCH)-w64-mingw32-windres AR=$(ARCH)-w64-mingw32-ar $(CARGO) build --target $(ARCH)-pc-windows-gnu --release
 	cp target/$(ARCH)-pc-windows-gnu/release/fixext.exe $@
 
 
