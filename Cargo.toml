@@ -33,3 +33,6 @@ winres     = "0.1"
 
 [package.metadata.winres]
 FileDescription = "Detects file type by content and fix incorrect file extensions"
+
+[patch.crates-io]
+winres = { git = "https://github.com/Skirmisher/winres", branch = "master" }
