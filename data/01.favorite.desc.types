@@ -20,3 +20,4 @@ M3U playlist	m3u
 SQLite( \S+)? database \(Fossil repository\)	fossil
 Keepass password database	kdbx
 magic binary file	mgc
+Microsoft DirectDraw Surface (DDS)	dds
